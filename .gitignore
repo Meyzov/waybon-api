@@ -1,0 +1,32 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+
+## Visual Studio
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+## Test results
+TestResults/
+*.trx
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+## Operating system
+.DS_Store
+Thumbs.db
+
+## Local environment and secrets
+.env
+.env.*
+!appsettings.json
+appsettings.*.json
+
+## Generated local tooling files
+*.log

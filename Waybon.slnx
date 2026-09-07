@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Waybon.Api/Waybon.Api.csproj" />
+    <Project Path="src/Waybon.Application/Waybon.Application.csproj" />
+    <Project Path="src/Waybon.Domain/Waybon.Domain.csproj" />
+    <Project Path="src/Waybon.Infrastructure/Waybon.Infrastructure.csproj" />
+  </Folder>
+</Solution>
