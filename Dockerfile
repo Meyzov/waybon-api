@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -11,6 +9,7 @@ COPY src/Waybon.Infrastructure/Waybon.Infrastructure.csproj src/Waybon.Infrastru
 RUN dotnet restore src/Waybon.Api/Waybon.Api.csproj
 
 COPY src/ src/
+
 RUN dotnet publish src/Waybon.Api/Waybon.Api.csproj \
     --configuration Release \
     --output /app/publish \
@@ -22,6 +21,8 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "dotnet Waybon.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]
+ENTRYPOINT ["dotnet", "Waybon.Api.dll"]

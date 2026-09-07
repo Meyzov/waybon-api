@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\Waybon.Application\Waybon.Application.csproj" />
@@ -10,6 +10,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Waybon.Api</RootNamespace>
+    <UserSecretsId>2b489b6a-98da-4ff4-83ae-72e8768d21a4</UserSecretsId>
   </PropertyGroup>
 
 </Project>
