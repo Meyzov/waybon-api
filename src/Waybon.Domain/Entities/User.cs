@@ -1,4 +1,5 @@
 using System.Net.Mail;
+using Waybon.Domain.Exceptions;
 
 namespace Waybon.Domain.Entities;
 
@@ -53,9 +54,9 @@ public sealed class User
     {
         if (string.IsNullOrWhiteSpace(username))
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Username is required.", nameof(username)
+                "Username is required."
             );
         }
 
@@ -63,25 +64,25 @@ public sealed class User
 
         if (normalizedName.Any(char.IsWhiteSpace))
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Username cannot contain spaces.", nameof(username)
+                "Username cannot contain spaces."
             );
         }
 
         if (normalizedName.Length < 3)
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Username must be at least 3 characters long.", nameof(username)
+                "Username must be at least 3 characters long."
             );
         }
 
         if (normalizedName.Length > 30)
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Username cannot exceed 30 characters.", nameof(username)
+                "Username cannot exceed 30 characters."
             );
         }
 
@@ -99,9 +100,9 @@ public sealed class User
     {
         if (string.IsNullOrWhiteSpace(email))
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Email is required.", nameof(email)
+                "Email is required."
             );
         }
 
@@ -113,9 +114,9 @@ public sealed class User
 
             if (mailAddress.Address != normalizedEmail)
             {
-                throw new ArgumentException
+                throw new DomainValidationException
                 (
-                    "Invalid email format.", nameof(email)
+                    "Invalid email format."
                 );
             }
 
@@ -123,9 +124,9 @@ public sealed class User
         }
         catch (FormatException)
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Invalid email format.", nameof(email)
+                "Invalid email format."
             );
         }
     }
@@ -140,9 +141,9 @@ public sealed class User
     {
         if (roleId == Guid.Empty)
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Role ID cannot be empty.", nameof(roleId)
+                "Role ID cannot be empty."
             );
         }
 

@@ -1,3 +1,5 @@
+using Waybon.Domain.Exceptions;
+
 namespace Waybon.Domain.Entities;
 
 public sealed class Session
@@ -40,9 +42,9 @@ public sealed class Session
     {
         if (userId == Guid.Empty)
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "User ID is required.", nameof(userId)
+                "User ID is required."
             );
         }
 
@@ -59,9 +61,9 @@ public sealed class Session
     {
         if (string.IsNullOrWhiteSpace(tokenHash))
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Token hash is required.", nameof(tokenHash)
+                "Token hash is required."
             );
         }
 

@@ -1,3 +1,5 @@
+using Waybon.Domain.Exceptions;
+
 namespace Waybon.Domain.Entities;
 
 public sealed class Role
@@ -44,18 +46,26 @@ public sealed class Role
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Role name is required.", nameof(name)
+                "Role name is required."
             );
         }
 
         var normalizedName = name.Trim();
+        if (normalizedName.Length < 3)
+        {
+            throw new DomainValidationException
+            (
+                "Role name must be at least 3 characters long."
+            );
+        }
+
         if (normalizedName.Length > 25)
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Role name cannot exceed 25 characters.", nameof(name)
+                "Role name cannot exceed 25 characters."
             );
         }
 

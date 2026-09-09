@@ -1,3 +1,5 @@
+using Waybon.Domain.Exceptions;
+
 namespace Waybon.Domain.Entities;
 
 public sealed class UserCredential
@@ -44,9 +46,9 @@ public sealed class UserCredential
     {
         if (userId == Guid.Empty)
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "User ID is required.", nameof(userId)
+                "User ID is required."
             );
         }
 
@@ -57,9 +59,9 @@ public sealed class UserCredential
     {
         if (string.IsNullOrWhiteSpace(passwordHash))
         {
-            throw new ArgumentException
+            throw new DomainValidationException
             (
-                "Password hash is required.", nameof(passwordHash)
+                "Password hash is required."
             );
         }
 
@@ -79,7 +81,7 @@ public sealed class UserCredential
             }
             else
             {
-                throw new InvalidOperationException
+                throw new AccountLockedException
                 (
                     "Account is currently locked."
                 );

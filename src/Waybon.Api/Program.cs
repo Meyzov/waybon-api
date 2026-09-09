@@ -1,23 +1,15 @@
+using Waybon.Api.Exceptions;
 using Waybon.Infrastructure;
-using Waybon.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-app.MapGet("/", async (AppDbContext db) =>
-{
-	try
-	{
-		var connected = await db.Database.CanConnectAsync();
-		return connected ? "Funciona" : "No funciona";
-	}
-	catch (Exception)
-	{
-		return "No funciona";
-	}
-});
-
+app.UseExceptionHandler();
+app.MapControllers();
 app.Run();
