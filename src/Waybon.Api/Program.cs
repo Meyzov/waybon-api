@@ -1,7 +1,12 @@
 using Waybon.Api.Exceptions;
 using Waybon.Infrastructure;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory
+});
+builder.Configuration.AddUserSecrets<Program>();
 
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();

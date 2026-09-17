@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/scripts/">
+    <Project Path="scripts/Waybon.Seeder/Waybon.Seeder.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Waybon.Api/Waybon.Api.csproj" />
     <Project Path="src/Waybon.Application/Waybon.Application.csproj" />

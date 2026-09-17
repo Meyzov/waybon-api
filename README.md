@@ -1,6 +1,8 @@
 # Waybon API
 
-ASP.NET Core API built with .NET 10, PostgreSQL, and Entity Framework Core. The solution is organized into separate projects following Clean Architecture principles.
+Waybon API is the backend for the Waybon platform: an ASP.NET Core 10 Web API built with PostgreSQL (hosted on Supabase) and Entity Framework Core. The solution follows Clean Architecture, splitting domain rules, application use cases, infrastructure implementations, and the HTTP layer into independent projects so each one can evolve and be tested on its own.
+
+It currently exposes role management as its first module, with authentication and additional business endpoints planned next. The API is deployed on Render and is meant to power two future clients: an admin web panel for managing the service, and a .NET MAUI mobile app.
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-10.0-512BD4?logo=dotnet&logoColor=white)](https://learn.microsoft.com/aspnet/core)
@@ -8,35 +10,24 @@ ASP.NET Core API built with .NET 10, PostgreSQL, and Entity Framework Core. The 
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render&logoColor=111111)](https://render.com/)
 
-> **Project status:** initial API stage. The API includes role management endpoints and the initial EF Core migration. User authentication and additional business endpoints will be added as the application grows.
+> **Status:** initial stage. Role management is done. Authentication and other business endpoints come next.
 
-## Contents
+---
 
-- [Waybon API](#waybon-api)
-  - [Contents](#contents)
-  - [Architecture](#architecture)
-  - [Project Structure](#project-structure)
-  - [Requirements](#requirements)
-  - [Local Setup](#local-setup)
-  - [Run Locally](#run-locally)
-  - [API Endpoints](#api-endpoints)
-  - [Migrations](#migrations)
-  - [Docker](#docker)
-  - [Deploy to Render](#deploy-to-render)
+## 🏗️ Architecture
 
-## Architecture
-
-The solution uses a dependency direction that points inward:
+Dependencies point inward:
 
 ```text
 Waybon.Api  →  Waybon.Application  →  Waybon.Domain
-
 Waybon.Api  →  Waybon.Infrastructure  →  Waybon.Application / Domain
 ```
 
 <!-- markdownlint-disable MD033 -->
 <details>
-<summary>Layer Responsibilities</summary>
+<summary>Layer responsibilities</summary>
+
+---
 
 | Layer          | Responsibility                                                        |
 | -------------- | --------------------------------------------------------------------- |
@@ -46,82 +37,29 @@ Waybon.Api  →  Waybon.Infrastructure  →  Waybon.Application / Domain
 | API            | HTTP composition root, configuration, and dependency injection.       |
 
 </details>
-<!-- markdownlint-enable MD033 -->
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```text
-src/
-├── Waybon.Api              # HTTP entry point
-├── Waybon.Application      # Use cases and application services
-├── Waybon.Domain           # Core business rules
-└── Waybon.Infrastructure   # External implementations
+waybon-api/
+├── src/
+│   ├── Waybon.Api              # HTTP entry point
+│   ├── Waybon.Application      # Use cases and application services
+│   ├── Waybon.Domain           # Core business rules
+│   └── Waybon.Infrastructure   # External implementations
+└── scripts/
+    └── Waybon.Seeder           # One-time console tool that seeds the base roles
 ```
 
-The infrastructure project contains the EF Core `AppDbContext`, entity configurations, and database migrations. The initial migration creates the `role`, `user`, `user_credential`, and `session` tables with their relationships and unique indexes.
+`Waybon.Seeder` is excluded from the Docker image (the `Dockerfile` only builds `Waybon.Api.csproj`) — it's a local/operational tool only. The initial migration creates the `role`, `user`, `user_credential`, and `session` tables with their relationships and unique indexes.
 
-## Requirements
+---
 
-| Requirement                                                         | Notes                                   |
-| ------------------------------------------------------------------- | --------------------------------------- |
-| [.NET SDK 10.0+](https://dotnet.microsoft.com/download/dotnet/10.0) | Required to build and run the solution. |
-| [Docker](https://docs.docker.com/get-docker/)                       | Required for container workflows.       |
-| [Supabase](https://supabase.com/) project                           | Provides the PostgreSQL database.       |
-| Entity Framework Core CLI                                           | Install with the command below.         |
+## 🔌 API Endpoints
 
-```powershell
-dotnet tool install --global dotnet-ef --version 10.0.4
-```
-
-## Local Setup
-
-1. Clone the repository and open its root directory:
-
-   ```powershell
-   git clone https://github.com/Meyzov/waybon-api.git
-   cd waybon-api
-   ```
-
-2. Restore the solution dependencies:
-
-   ```powershell
-   dotnet restore Waybon.slnx
-   ```
-
-3. Configure the Supabase connection with .NET User Secrets:
-
-   ```powershell
-   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_SUPABASE_CONNECTION_STRING" --project src/Waybon.Api/Waybon.Api.csproj
-   ```
-
-   The connection string must be named `DefaultConnection`. Never commit the real value or database password.
-
-## Run Locally
-
-1. Run the API from the repository root:
-
-   ```powershell
-   $env:ASPNETCORE_ENVIRONMENT = "Development"
-   dotnet run --project src/Waybon.Api/Waybon.Api.csproj
-   ```
-
-2. Check the role API:
-
-   ```text
-   GET /api/roles
-   ```
-
-   An empty JSON array means the API connected successfully and there are no roles yet.
-
-3. (Optional) Compile the complete solution:
-
-   ```powershell
-   dotnet build Waybon.slnx
-   ```
-
-## API Endpoints
-
-Role management is available under `/api/roles`:
+`/api/roles` — name must be unique, 3-25 characters:
 
 | Method   | Endpoint          | Description             |
 | -------- | ----------------- | ----------------------- |
@@ -131,56 +69,83 @@ Role management is available under `/api/roles`:
 | `PUT`    | `/api/roles/{id}` | Update an existing role |
 | `DELETE` | `/api/roles/{id}` | Delete a role           |
 
-Create or update a role with a JSON body containing a name between 3 and 25 characters:
-
 ```json
-{
-  "name": "admin"
-}
+{ "name": "admin" }
 ```
 
-The role name must be unique. Validation and conflict errors are returned as JSON responses by the global exception handler.
+You can try the endpoints with Postman or any similar HTTP client.
 
-<!-- markdownlint-disable MD033 -->
+---
+
+## Requirements
+
+- [.NET SDK 10.0+](https://dotnet.microsoft.com/download/dotnet/10.0)
+- A [Supabase](https://supabase.com/) project (PostgreSQL database)
+- EF Core CLI: `dotnet tool install --global dotnet-ef --version 10.0.4`
+
+---
+
+## ⚙️ Local Setup
+
+1. **Clone and restore**
+
+   ```powershell
+   git clone https://github.com/Meyzov/waybon-api.git
+   cd waybon-api
+   dotnet restore Waybon.slnx
+   ```
+
+2. **Set your Supabase connection string.** The API and the seed script each keep their own secrets, so set it for both:
+
+   ```powershell
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_SUPABASE_CONNECTION_STRING" --project src/Waybon.Api/Waybon.Api.csproj
+
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_SUPABASE_CONNECTION_STRING" --project scripts/Waybon.Seeder/Waybon.Seeder.csproj
+   ```
+
+3. **Apply the database migrations:**
+
+   ```powershell
+   dotnet ef database update --project src/Waybon.Infrastructure/Waybon.Infrastructure.csproj --startup-project src/Waybon.Api/Waybon.Api.csproj
+   ```
+
+4. **Seed the base roles** (`admin`, `user`) — only needed once per database:
+
+   ```powershell
+   dotnet run --project scripts/Waybon.Seeder
+   ```
+
+5. **Run the API:**
+
+   ```powershell
+   dotnet run --project src/Waybon.Api/Waybon.Api.csproj
+   ```
+
+6. **Confirm it works** — `GET /api/roles` should return the `admin` and `user` roles.
+
+---
+
+## 🚀 Deploy to Render
+
+1. Create a **Web Service**, connect the GitHub repo, and set:
+
+   | Setting              | Value        |
+   | -------------------- | ------------ |
+   | Runtime              | Docker       |
+   | Dockerfile Path      | `Dockerfile` |
+   | Docker Build Context | `.`          |
+   | Start Command        | Leave empty  |
+
+2. Add the environment variable `ConnectionStrings__DefaultConnection` with the Supabase connection string.
+3. Deploy.
+4. The image doesn't run migrations or the seed script automatically — from your machine, pointed at the same Supabase database, run the migration and seed commands from [Local Setup](#local-setup) (steps 3 and 4) once.
+
+---
+
 <details>
-<summary>Example Create Request (PowerShell)</summary>
+<summary><strong>Creating a New Migration</strong></summary>
 
-```powershell
-$body = @{ name = "admin" } | ConvertTo-Json
-
-Invoke-RestMethod `
-   -Uri http://localhost:5000/api/roles `
-   -Method Post `
-   -ContentType "application/json" `
-   -Body $body
-```
-
-Use the returned role ID with `GET`, `PUT`, or `DELETE` requests.
-
-</details>
-<!-- markdownlint-enable MD033 -->
-
-## Migrations
-
-Migrations are stored in:
-
-```text
-src/Waybon.Infrastructure/Persistence/Migrations/
-```
-
-Apply migrations to the configured database:
-
-```powershell
-dotnet ef database update `
-    --project src/Waybon.Infrastructure/Waybon.Infrastructure.csproj `
-    --startup-project src/Waybon.Api/Waybon.Api.csproj
-```
-
-<!-- markdownlint-disable MD033 -->
-<details>
-<summary>(Optional) Create a New Migration</summary>
-
-Only create a new migration after changing entities or EF Core configurations:
+Only after changing entities or EF Core configurations:
 
 ```powershell
 dotnet ef migrations add MigrationName `
@@ -190,47 +155,16 @@ dotnet ef migrations add MigrationName `
 ```
 
 </details>
+
+<details>
+<summary><strong>Run with Docker</strong></summary>
+
+```powershell
+docker build -t waybon-api .
+docker run --rm -p 8080:8080 -e ConnectionStrings__DefaultConnection="YOUR_SUPABASE_CONNECTION_STRING" waybon-api
+```
+
+The API is then available at `http://localhost:8080`.
+
+</details>
 <!-- markdownlint-enable MD033 -->
-
-## Docker
-
-1. Build the image from the repository root:
-
-   ```powershell
-   docker build -t waybon-api .
-   ```
-
-2. Run the container:
-
-   ```powershell
-   docker run --rm -p 8080:8080 -e ConnectionStrings__DefaultConnection="YOUR_SUPABASE_CONNECTION_STRING" waybon-api
-   ```
-
-3. The API will be available at:
-
-   ```text
-   http://localhost:8080
-   ```
-
-## Deploy to Render
-
-1. Create a new **Web Service** in Render.
-2. Connect the GitHub repository.
-3. Configure the service:
-
-   | Setting              | Value        |
-   | -------------------- | ------------ |
-   | Runtime              | Docker       |
-   | Dockerfile Path      | `Dockerfile` |
-   | Docker Build Context | `.`          |
-   | Start Command        | Leave empty  |
-
-4. Add the database connection as an environment variable:
-
-   ```text
-   ConnectionStrings__DefaultConnection
-   ```
-
-   Use the Supabase PostgreSQL connection string as its value.
-
-5. Deploy the service.
