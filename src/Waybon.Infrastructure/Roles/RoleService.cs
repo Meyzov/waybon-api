@@ -38,6 +38,20 @@ public sealed class RoleService(AppDbContext context) : IRoleService
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 
+    public async Task<RoleResponse?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await context.Roles
+            .AsNoTracking()
+            .Select(role => new RoleResponse
+            {
+                Id = role.Id,
+                Name = role.Name,
+                CreatedAt = role.CreatedAt,
+                UpdatedAt = role.UpdatedAt
+            })
+            .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
+    }
+
     public async Task<RoleResponse> CreateAsync(CreateRoleRequest request, CancellationToken cancellationToken = default)
     {
         var newRole = new Role(request.Name);

@@ -47,5 +47,11 @@ public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserC
             uc => uc.UpdatedAt
         )
         .HasColumnType("timestamptz");
+
+        builder.Property
+        (
+            uc => uc.PasswordChangedAt
+        )
+        .HasColumnType("timestamptz");
     }
 }

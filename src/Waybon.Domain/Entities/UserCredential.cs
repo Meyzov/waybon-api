@@ -22,6 +22,7 @@ public sealed class UserCredential
         LockedUntil = null;
         CreatedAt = DateTimeOffset.UtcNow;
         UpdatedAt = CreatedAt;
+        PasswordChangedAt = CreatedAt;
     }
 
 
@@ -36,6 +37,7 @@ public sealed class UserCredential
     public DateTimeOffset? LockedUntil { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
+    public DateTimeOffset PasswordChangedAt { get; private set; }
 
 
     // ===================================

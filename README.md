@@ -2,7 +2,7 @@
 
 Waybon API is the backend for the Waybon platform: an ASP.NET Core 10 Web API built with PostgreSQL (hosted on Supabase) and Entity Framework Core. The solution follows Clean Architecture, splitting domain rules, application use cases, infrastructure implementations, and the HTTP layer into independent projects so each one can evolve and be tested on its own.
 
-It currently exposes role management as its first module, with authentication and additional business endpoints planned next. The API is deployed on Render and is meant to power two future clients: an admin web panel for managing the service, and a .NET MAUI mobile app.
+It currently exposes role and user management as its first modules, with authentication and additional business endpoints planned next. The API is deployed on Render and is meant to power two future clients: an admin web panel for managing the service, and a .NET MAUI mobile app.
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-10.0-512BD4?logo=dotnet&logoColor=white)](https://learn.microsoft.com/aspnet/core)
@@ -10,7 +10,7 @@ It currently exposes role management as its first module, with authentication an
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render&logoColor=111111)](https://render.com/)
 
-> **Status:** initial stage. Role management is done. Authentication and other business endpoints come next.
+> **Status:** initial stage. Role and user management are done. Authentication and other business endpoints come next.
 
 ---
 
@@ -71,6 +71,24 @@ waybon-api/
 
 ```json
 { "name": "admin" }
+```
+
+`/api/users` — email must be unique; password must be 8-72 characters. New accounts are always created with the `user` role:
+
+| Method   | Endpoint          | Description                      |
+| -------- | ----------------- | -------------------------------- |
+| `GET`    | `/api/users`      | List all users                   |
+| `GET`    | `/api/users/{id}` | Get a user by ID                 |
+| `POST`   | `/api/users`      | Register a new user              |
+| `PATCH`  | `/api/users/{id}` | Update the username and/or email |
+| `DELETE` | `/api/users/{id}` | Delete a user                    |
+
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "supersecret123"
+}
 ```
 
 You can try the endpoints with Postman or any similar HTTP client.
