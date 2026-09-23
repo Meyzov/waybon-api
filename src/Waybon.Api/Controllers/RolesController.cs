@@ -28,9 +28,10 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
     public async Task<ActionResult<RoleResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var role = await roleService.GetByIdAsync(id, cancellationToken);
-        if (role is null) return NotFound
+        if (role is null) return Problem
         (
-            new { error = "Role not found." }
+            statusCode: StatusCodes.Status404NotFound,
+            detail: "Role not found."
         );
 
         return Ok(role);
@@ -65,9 +66,10 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
     public async Task<ActionResult<RoleResponse>> Update(Guid id, UpdateRoleRequest request, CancellationToken cancellationToken)
     {
         var role = await roleService.UpdateAsync(id, request, cancellationToken);
-        if (role is null) return NotFound
+        if (role is null) return Problem
         (
-            new { error = "Role not found." }
+            statusCode: StatusCodes.Status404NotFound,
+            detail: "Role not found."
         );
 
         return Ok(role);
@@ -82,9 +84,10 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await roleService.DeleteAsync(id, cancellationToken);
-        if (!deleted) return NotFound
+        if (!deleted) return Problem
         (
-            new { error = "Role not found." }
+            statusCode: StatusCodes.Status404NotFound,
+            detail: "Role not found."
         );
 
         return NoContent();

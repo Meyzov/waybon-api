@@ -8,9 +8,23 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
 {
     public void Configure(EntityTypeBuilder<Session> builder)
     {
+        // ===================================
+        // Table
+        // ===================================
+
         builder.ToTable("session");
 
+
+        // ===================================
+        // Id
+        // ===================================
+
         builder.HasKey(session => session.Id);
+
+
+        // ===================================
+        // UserId
+        // ===================================
 
         builder.HasIndex
         (
@@ -23,23 +37,22 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         .HasForeignKey<Session>(session => session.UserId)
         .OnDelete(DeleteBehavior.Cascade);
 
+
+        // ===================================
+        // TokenHash
+        // ===================================
+
         builder.Property
         (
             session => session.TokenHash
         )
         .IsRequired()
-        .HasMaxLength(1024);
+        .HasMaxLength(64);
 
-        builder.Property
+        builder.HasIndex
         (
-            session => session.CreatedAt
+            session => session.TokenHash
         )
-        .HasColumnType("timestamptz");
-
-        builder.Property
-        (
-            session => session.UpdatedAt
-        )
-        .HasColumnType("timestamptz");
+        .IsUnique();
     }
 }

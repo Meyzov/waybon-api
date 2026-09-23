@@ -15,6 +15,6 @@ public sealed class CreateUserRequest
 
     [Required]
     [MinLength(8)]
-    [MaxLength(72)]
+    [MaxLength(128)]
     public string Password { get; set; } = string.Empty;
 }

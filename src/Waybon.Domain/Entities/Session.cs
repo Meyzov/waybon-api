@@ -15,7 +15,7 @@ public sealed class Session
 
     public Session(Guid userId, string tokenHash)
     {
-        Id = Guid.NewGuid();
+        Id = Guid.CreateVersion7();
         UserId = ValidateUserId(userId);
         TokenHash = ValidateTokenHash(tokenHash);
         CreatedAt = DateTimeOffset.UtcNow;

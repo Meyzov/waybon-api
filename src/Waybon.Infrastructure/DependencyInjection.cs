@@ -20,9 +20,20 @@ public static class DependencyInjection
         // ===================================
 
         var connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("The 'DefaultConnection' connection string is not configured.");
-        services.AddDbContext<AppDbContext>
+        services.AddDbContextPool<AppDbContext>
         (
-            options => options.UseNpgsql(connectionString)
+            options => options
+                .UseNpgsql
+                (
+                    connectionString,
+                    npgsql => npgsql.EnableRetryOnFailure
+                    (
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        errorCodesToAdd: null
+                    )
+                )
+                .UseSnakeCaseNamingConvention()
         );
 
 
@@ -33,7 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IUserService, UserService>();
-        
+
         return services;
     }
 }

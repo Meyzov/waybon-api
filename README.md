@@ -50,7 +50,7 @@ waybon-api/
 │   ├── Waybon.Domain           # Core business rules
 │   └── Waybon.Infrastructure   # External implementations
 └── scripts/
-    └── Waybon.Seeder           # One-time console tool that seeds the base roles
+    └── Waybon.Seeder           # Console tool that seeds the base roles and the default role
 ```
 
 `Waybon.Seeder` is excluded from the Docker image (the `Dockerfile` only builds `Waybon.Api.csproj`) — it's a local/operational tool only. The initial migration creates the `role`, `user`, `user_credential`, and `session` tables with their relationships and unique indexes.
@@ -59,7 +59,7 @@ waybon-api/
 
 ## 🔌 API Endpoints
 
-`/api/roles` — name must be unique, 3-25 characters:
+`/api/roles` — name must be unique, 3-25 characters. One role is marked as the default (`isDefault`); it's assigned to every new user and can't be deleted:
 
 | Method   | Endpoint          | Description             |
 | -------- | ----------------- | ----------------------- |
@@ -73,7 +73,7 @@ waybon-api/
 { "name": "admin" }
 ```
 
-`/api/users` — email must be unique; password must be 8-72 characters. New accounts are always created with the `user` role:
+`/api/users` — email must be unique; password must be 8-128 characters. New accounts are always created with the default role:
 
 | Method   | Endpoint          | Description                      |
 | -------- | ----------------- | -------------------------------- |
@@ -91,6 +91,8 @@ waybon-api/
 }
 ```
 
+Errors follow the [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457) format: every error response includes `status`, `title`, and `detail`, plus `errors` for validation failures.
+
 You can try the endpoints with Postman or any similar HTTP client.
 
 ---
@@ -103,6 +105,8 @@ You can try the endpoints with Postman or any similar HTTP client.
 
 ---
 
+<a id="local-setup"></a>
+
 ## ⚙️ Local Setup
 
 1. **Clone and restore**
@@ -113,12 +117,12 @@ You can try the endpoints with Postman or any similar HTTP client.
    dotnet restore Waybon.slnx
    ```
 
-2. **Set your Supabase connection string.** The API and the seed script each keep their own secrets, so set it for both:
+2. **Set your Supabase connection string.** Use the **session pooler** string from Supabase (`*.pooler.supabase.com`, port `5432`) and add `Maximum Pool Size` at the end. The API and the seed script each keep their own secrets, so set it for both:
 
    ```powershell
-   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_SUPABASE_CONNECTION_STRING" --project src/Waybon.Api/Waybon.Api.csproj
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_SUPABASE_CONNECTION_STRING;Maximum Pool Size=20" --project src/Waybon.Api/Waybon.Api.csproj
 
-   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_SUPABASE_CONNECTION_STRING" --project scripts/Waybon.Seeder/Waybon.Seeder.csproj
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_SUPABASE_CONNECTION_STRING;Maximum Pool Size=5" --project scripts/Waybon.Seeder/Waybon.Seeder.csproj
    ```
 
 3. **Apply the database migrations:**
@@ -127,7 +131,7 @@ You can try the endpoints with Postman or any similar HTTP client.
    dotnet ef database update --project src/Waybon.Infrastructure/Waybon.Infrastructure.csproj --startup-project src/Waybon.Api/Waybon.Api.csproj
    ```
 
-4. **Seed the base roles** (`admin`, `user`) — only needed once per database:
+4. **Seed the base roles** (`admin`, `user`) and mark `user` as the default role — safe to run more than once:
 
    ```powershell
    dotnet run --project scripts/Waybon.Seeder
@@ -139,7 +143,7 @@ You can try the endpoints with Postman or any similar HTTP client.
    dotnet run --project src/Waybon.Api/Waybon.Api.csproj
    ```
 
-6. **Confirm it works** — `GET /api/roles` should return the `admin` and `user` roles.
+6. **Confirm it works** — `GET /api/roles` should return the `admin` and `user` roles, with `user` marked as `"isDefault": true`.
 
 ---
 
@@ -154,7 +158,7 @@ You can try the endpoints with Postman or any similar HTTP client.
    | Docker Build Context | `.`          |
    | Start Command        | Leave empty  |
 
-2. Add the environment variable `ConnectionStrings__DefaultConnection` with the Supabase connection string.
+2. Add the environment variable `ConnectionStrings__DefaultConnection` with the Supabase session pooler connection string, ending in `;Maximum Pool Size=20`.
 3. Deploy.
 4. The image doesn't run migrations or the seed script automatically — from your machine, pointed at the same Supabase database, run the migration and seed commands from [Local Setup](#local-setup) (steps 3 and 4) once.
 

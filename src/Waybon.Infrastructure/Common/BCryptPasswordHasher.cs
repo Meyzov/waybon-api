@@ -8,11 +8,11 @@ public sealed class BCryptPasswordHasher : IPasswordHasher
 
     public string HashPassword(string password)
     {
-        return BCrypt.Net.BCrypt.HashPassword(password, workFactor: WorkFactor);
+        return BCrypt.Net.BCrypt.EnhancedHashPassword(password, workFactor: WorkFactor);
     }
 
     public bool VerifyPassword(string password, string hash)
     {
-        return BCrypt.Net.BCrypt.Verify(password, hash);
+        return BCrypt.Net.BCrypt.EnhancedVerify(password, hash);
     }
 }

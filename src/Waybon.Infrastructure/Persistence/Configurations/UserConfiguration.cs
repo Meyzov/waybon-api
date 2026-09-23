@@ -8,9 +8,23 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
+        // ===================================
+        // Table
+        // ===================================
+
         builder.ToTable("user");
 
+
+        // ===================================
+        // Id
+        // ===================================
+
         builder.HasKey(user => user.Id);
+
+
+        // ===================================
+        // Username
+        // ===================================
 
         builder.Property
         (
@@ -18,6 +32,11 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         )
         .IsRequired()
         .HasMaxLength(30);
+
+
+        // ===================================
+        // Email
+        // ===================================
 
         builder.Property
         (
@@ -32,33 +51,37 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         )
         .IsUnique();
 
+
+        // ===================================
+        // RoleId
+        // ===================================
+
         builder.HasOne<Role>()
         .WithMany()
         .HasForeignKey(user => user.RoleId)
         .OnDelete(DeleteBehavior.Restrict);
 
+
+        // ===================================
+        // IsActive
+        // ===================================
+
         builder.Property
         (
             user => user.IsActive
         )
-        .HasDefaultValue(true);
+        .HasDefaultValue(true)
+        .HasSentinel(true);
+
+
+        // ===================================
+        // EmailVerified
+        // ===================================
 
         builder.Property
         (
             user => user.EmailVerified
         )
         .HasDefaultValue(false);
-
-        builder.Property
-        (
-            user => user.CreatedAt
-        )
-        .HasColumnType("timestamptz");
-
-        builder.Property
-        (
-            user => user.UpdatedAt
-        )
-        .HasColumnType("timestamptz");
     }
 }

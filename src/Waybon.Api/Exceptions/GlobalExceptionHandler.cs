@@ -1,46 +1,35 @@
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Waybon.Application.Common.Exceptions;
 using Waybon.Domain.Exceptions;
 
 namespace Waybon.Api.Exceptions;
 
-public sealed class GlobalExceptionHandler : IExceptionHandler
+public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        var response = exception switch
+        var (statusCode, detail) = exception switch
         {
-            DomainValidationException ex => new
-            {
-                StatusCode = StatusCodes.Status400BadRequest,
-                ex.Message
-            },
-            
-            ConflictException ex => new
-            {
-                StatusCode = StatusCodes.Status409Conflict,
-                ex.Message
-            },
-
-            AccountLockedException ex => new
-            {
-                StatusCode = StatusCodes.Status423Locked,
-                ex.Message
-            },
-
-            _ => new
-            {
-                StatusCode = StatusCodes.Status500InternalServerError,
-                Message = "An unexpected error occurred."
-            }
+            DomainValidationException ex => (StatusCodes.Status400BadRequest, ex.Message),
+            ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
+            AccountLockedException ex => (StatusCodes.Status423Locked, ex.Message),
+            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
         };
 
-        httpContext.Response.StatusCode = response.StatusCode;
-        await httpContext.Response.WriteAsJsonAsync
-        (
-            new { error = response.Message }, cancellationToken
-        );
+        httpContext.Response.StatusCode = statusCode;
 
-        return true;
+        return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = httpContext,
+            Exception = exception,
+            ProblemDetails = new ProblemDetails
+            {
+                Status = statusCode,
+                Title = ReasonPhrases.GetReasonPhrase(statusCode),
+                Detail = detail
+            }
+        });
     }
 }

@@ -8,9 +8,23 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
 {
     public void Configure(EntityTypeBuilder<Role> builder)
     {
+        // ===================================
+        // Table
+        // ===================================
+
         builder.ToTable("role");
-        
+
+
+        // ===================================
+        // Id
+        // ===================================
+
         builder.HasKey(role => role.Id);
+
+
+        // ===================================
+        // Name
+        // ===================================
 
         builder.Property
         (
@@ -24,17 +38,17 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
             role => role.Name
         )
         .IsUnique();
+        
 
-        builder.Property
-        (
-            role => role.CreatedAt
-        )
-        .HasColumnType("timestamptz");
+        // ===================================
+        // IsDefault
+        // ===================================
 
-        builder.Property
+        builder.HasIndex
         (
-            role => role.UpdatedAt
+            role => role.IsDefault
         )
-        .HasColumnType("timestamptz");
+        .IsUnique()
+        .HasFilter("is_default = true");
     }
 }

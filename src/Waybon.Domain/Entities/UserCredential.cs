@@ -15,7 +15,7 @@ public sealed class UserCredential
 
     public UserCredential(Guid userId, string passwordHash)
     {
-        Id = Guid.NewGuid();
+        Id = Guid.CreateVersion7();
         UserId = ValidateUserId(userId);
         PasswordHash = ValidatePasswordHash(passwordHash);
         FailedLoginAttempts = 0;
@@ -102,6 +102,14 @@ public sealed class UserCredential
 
     public void RegisterSuccessfulLogin()
     {
+        if (LockedUntil > DateTimeOffset.UtcNow)
+        {
+            throw new AccountLockedException
+            (
+                "Account is currently locked."
+            );
+        }
+
         FailedLoginAttempts = 0;
         LockedUntil = null;
         UpdatedAt = DateTimeOffset.UtcNow;

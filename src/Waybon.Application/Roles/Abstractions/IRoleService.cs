@@ -10,4 +10,6 @@ public interface IRoleService
     Task<RoleResponse> CreateAsync(CreateRoleRequest request, CancellationToken cancellationToken = default);
     Task<RoleResponse?> UpdateAsync(Guid id, UpdateRoleRequest request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<RoleResponse?> GetDefaultAsync(CancellationToken cancellationToken = default);
+    Task<RoleResponse?> SetDefaultAsync(Guid id, CancellationToken cancellationToken = default);
 }

@@ -16,7 +16,7 @@ public sealed class User
 
     public User(string username, string email, Guid roleId)
     {
-        Id = Guid.NewGuid();
+        Id = Guid.CreateVersion7();
         Username = NormalizeUsername(username);
         Email = NormalizeEmail(email);
         RoleId = ValidateRoleId(roleId);
@@ -46,7 +46,10 @@ public sealed class User
 
     public void UpdateUsername(string newUsername)
     {
-        Username = NormalizeUsername(newUsername);
+        var normalizedUsername = NormalizeUsername(newUsername);
+        if (normalizedUsername == Username) return;
+
+        Username = normalizedUsername;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
@@ -91,7 +94,10 @@ public sealed class User
 
     public void UpdateEmail(string newEmail)
     {
-        Email = NormalizeEmail(newEmail);
+        var normalizedEmail = NormalizeEmail(newEmail);
+        if (normalizedEmail == Email) return;
+
+        Email = normalizedEmail;
         EmailVerified = false;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
@@ -133,7 +139,10 @@ public sealed class User
 
     public void UpdateRoleId(Guid newRoleId)
     {
-        RoleId = ValidateRoleId(newRoleId);
+        var validatedRoleId = ValidateRoleId(newRoleId);
+        if (validatedRoleId == RoleId) return;
+
+        RoleId = validatedRoleId;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
@@ -152,18 +161,24 @@ public sealed class User
 
     public void Activate()
     {
+        if (IsActive) return;
+
         IsActive = true;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void Deactivate()
     {
+        if (!IsActive) return;
+
         IsActive = false;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void VerifyEmail()
     {
+        if (EmailVerified) return;
+
         EmailVerified = true;
         UpdatedAt = DateTimeOffset.UtcNow;
     }

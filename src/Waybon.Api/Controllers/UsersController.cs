@@ -28,9 +28,10 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var user = await userService.GetByIdAsync(id, cancellationToken);
-        if (user is null) return NotFound
+        if (user is null) return Problem
         (
-            new { error = "User not found." }
+            statusCode: StatusCodes.Status404NotFound,
+            detail: "User not found."
         );
 
         return Ok(user);
@@ -65,9 +66,10 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> Update(Guid id, UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var user = await userService.UpdateAsync(id, request, cancellationToken);
-        if (user is null) return NotFound
+        if (user is null) return Problem
         (
-            new { error = "User not found." }
+            statusCode: StatusCodes.Status404NotFound,
+            detail: "User not found."
         );
 
         return Ok(user);
@@ -82,9 +84,10 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await userService.DeleteAsync(id, cancellationToken);
-        if (!deleted) return NotFound
+        if (!deleted) return Problem
         (
-            new { error = "User not found." }
+            statusCode: StatusCodes.Status404NotFound,
+            detail: "User not found."
         );
 
         return NoContent();

@@ -8,9 +8,23 @@ public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserC
 {
     public void Configure(EntityTypeBuilder<UserCredential> builder)
     {
+        // ===================================
+        // Table
+        // ===================================
+
         builder.ToTable("user_credential");
 
+
+        // ===================================
+        // Id
+        // ===================================
+
         builder.HasKey(uc => uc.Id);
+
+
+        // ===================================
+        // UserId
+        // ===================================
 
         builder.HasIndex
         (
@@ -23,35 +37,27 @@ public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserC
         .HasForeignKey<UserCredential>(uc => uc.UserId)
         .OnDelete(DeleteBehavior.Cascade);
 
+
+        // ===================================
+        // PasswordHash
+        // ===================================
+
         builder.Property
         (
             uc => uc.PasswordHash
         )
         .IsRequired()
-        .HasMaxLength(1024);
+        .HasMaxLength(128);
+
+
+        // ===================================
+        // FailedLoginAttempts
+        // ===================================
 
         builder.Property
         (
             uc => uc.FailedLoginAttempts
         )
         .HasDefaultValue(0);
-
-        builder.Property
-        (
-            uc => uc.CreatedAt
-        )
-        .HasColumnType("timestamptz");
-
-        builder.Property
-        (
-            uc => uc.UpdatedAt
-        )
-        .HasColumnType("timestamptz");
-
-        builder.Property
-        (
-            uc => uc.PasswordChangedAt
-        )
-        .HasColumnType("timestamptz");
     }
 }

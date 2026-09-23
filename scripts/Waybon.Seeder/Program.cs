@@ -1,10 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Waybon.Application.Common.Exceptions;
 using Waybon.Application.Roles.Abstractions;
 using Waybon.Application.Roles.Dtos;
 using Waybon.Infrastructure;
+
+// ===================================
+// Host
+// ===================================
 
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
 {
@@ -18,15 +21,34 @@ builder.Services.AddInfrastructure(builder.Configuration);
 using var host = builder.Build();
 var roleService = host.Services.GetRequiredService<IRoleService>();
 
+
+// ===================================
+// Base roles
+// ===================================
+
 foreach (var name in new[] { "admin", "user" })
 {
-    try
-    {
-        var role = await roleService.CreateAsync(new CreateRoleRequest { Name = name });
-        Console.WriteLine($"Rol '{role.Name}' creado el {role.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC.");
-    }
-    catch (ConflictException)
+    if (await roleService.GetByNameAsync(name) is not null)
     {
         Console.WriteLine($"Rol '{name}' ya existe, se omite.");
+        continue;
+    }
+
+    var role = await roleService.CreateAsync(new CreateRoleRequest { Name = name });
+    Console.WriteLine($"Rol '{role.Name}' creado el {role.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC.");
+}
+
+
+// ===================================
+// Default role
+// ===================================
+
+if (await roleService.GetDefaultAsync() is null)
+{
+    var userRole = await roleService.GetByNameAsync("user");
+    if (userRole is not null)
+    {
+        await roleService.SetDefaultAsync(userRole.Id);
+        Console.WriteLine($"Rol '{userRole.Name}' marcado como rol por defecto.");
     }
 }

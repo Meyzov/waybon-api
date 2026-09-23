@@ -12,6 +12,10 @@ namespace Waybon.Infrastructure.Users;
 
 public sealed class UserService(AppDbContext context, IRoleService roleService, IPasswordHasher passwordHasher) : IUserService
 {
+    // ===================================
+    // GetAllAsync
+    // ===================================
+
     public async Task<IReadOnlyList<UserResponse>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await context.Users
@@ -29,6 +33,11 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
             })
             .ToListAsync(cancellationToken);
     }
+
+
+    // ===================================
+    // GetByIdAsync
+    // ===================================
 
     public async Task<UserResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -48,9 +57,14 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
+
+    // ===================================
+    // CreateAsync
+    // ===================================
+
     public async Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var defaultRole = await roleService.GetByNameAsync("user", cancellationToken) ?? throw new InvalidOperationException("The default 'user' role is not found.");
+        var defaultRole = await roleService.GetDefaultAsync(cancellationToken) ?? throw new InvalidOperationException("No default role is configured.");
 
         var newUser = new User(request.Username, request.Email, defaultRole.Id);
         var passwordHash = passwordHasher.HashPassword(request.Password);
@@ -65,6 +79,7 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
+            context.ChangeTracker.Clear();
             throw new ConflictException("A user with that email already exists.");
         }
 
@@ -81,6 +96,11 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
         };
     }
 
+
+    // ===================================
+    // UpdateAsync
+    // ===================================
+
     public async Task<UserResponse?> UpdateAsync(Guid id, UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
         var user = await context.Users.FindAsync([id], cancellationToken);
@@ -91,7 +111,7 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
             user.UpdateUsername(request.Username);
         }
 
-        if (request.Email is not null && !string.Equals(request.Email, user.Email, StringComparison.OrdinalIgnoreCase))
+        if (request.Email is not null)
         {
             user.UpdateEmail(request.Email);
         }
@@ -102,6 +122,7 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
+            context.ChangeTracker.Clear();
             throw new ConflictException("A user with that email already exists.");
         }
 
@@ -118,6 +139,11 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
         };
     }
 
+
+    // ===================================
+    // DeleteAsync
+    // ===================================
+
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var user = await context.Users.FindAsync([id], cancellationToken);
@@ -128,6 +154,11 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
 
         return true;
     }
+
+
+    // ===================================
+    // Helpers
+    // ===================================
 
     private static bool IsUniqueConstraintViolation(DbUpdateException ex)
     {
