@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+COPY Directory.Build.props ./
 COPY src/Waybon.Api/Waybon.Api.csproj src/Waybon.Api/
 COPY src/Waybon.Application/Waybon.Application.csproj src/Waybon.Application/
 COPY src/Waybon.Domain/Waybon.Domain.csproj src/Waybon.Domain/
@@ -24,7 +25,7 @@ RUN apt-get update \
 
 COPY --from=build /app/publish .
 
-ENV ASPNETCORE_ENVIRONMENT=Production
+USER $APP_UID
 
 EXPOSE 8080
 

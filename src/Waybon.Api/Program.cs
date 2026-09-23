@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Waybon.Api.Exceptions;
 using Waybon.Infrastructure;
 
@@ -36,11 +37,24 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 
 // ===================================
+// Reverse proxy (Render)
+// ===================================
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+
+// ===================================
 // Pipeline
 // ===================================
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.MapControllers();
 app.Run();
