@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.HttpOverrides;
 using Waybon.Api.Exceptions;
 using Waybon.Infrastructure;
@@ -20,6 +21,20 @@ builder.Configuration.AddUserSecrets<Program>();
 
 builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+
+// ===================================
+// API versioning
+// ===================================
+
+builder.Services
+    .AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.ReportApiVersions = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    })
+    .AddMvc();
 
 
 // ===================================

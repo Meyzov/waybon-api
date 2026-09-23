@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Waybon.Application.Roles.Abstractions;
 using Waybon.Application.Roles.Dtos;
@@ -5,11 +6,12 @@ using Waybon.Application.Roles.Dtos;
 namespace Waybon.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion(1.0)]
+[Route("api/v{version:apiVersion}/[controller]")]
 public sealed class RolesController(IRoleService roleService) : ControllerBase
 {
     // ===================================
-    // GET: api/roles
+    // GET: api/v1/roles
     // ===================================
 
     [HttpGet]
@@ -21,7 +23,7 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
 
 
     // ===================================
-    // GET: api/roles/{id}
+    // GET: api/v1/roles/{id}
     // ===================================
 
     [HttpGet("{id:guid}")]
@@ -39,7 +41,7 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
 
 
     // ===================================
-    // POST: api/roles
+    // POST: api/v1/roles
     // ===================================
 
     [HttpPost]
@@ -59,7 +61,7 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
 
 
     // ===================================
-    // PUT: api/roles/{id}
+    // PUT: api/v1/roles/{id}
     // ===================================
 
     [HttpPut("{id:guid}")]
@@ -77,7 +79,7 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
 
 
     // ===================================
-    // DELETE: api/roles/{id}
+    // DELETE: api/v1/roles/{id}
     // ===================================
 
     [HttpDelete("{id:guid}")]

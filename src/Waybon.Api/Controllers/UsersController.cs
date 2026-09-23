@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Waybon.Application.Users.Abstractions;
 using Waybon.Application.Users.Dtos;
@@ -5,11 +6,12 @@ using Waybon.Application.Users.Dtos;
 namespace Waybon.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion(1.0)]
+[Route("api/v{version:apiVersion}/[controller]")]
 public sealed class UsersController(IUserService userService) : ControllerBase
 {
     // ===================================
-    // GET: api/users
+    // GET: api/v1/users
     // ===================================
 
     [HttpGet]
@@ -21,7 +23,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
 
 
     // ===================================
-    // GET: api/users/{id}
+    // GET: api/v1/users/{id}
     // ===================================
 
     [HttpGet("{id:guid}")]
@@ -39,7 +41,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
 
 
     // ===================================
-    // POST: api/users
+    // POST: api/v1/users
     // ===================================
 
     [HttpPost]
@@ -59,7 +61,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
 
 
     // ===================================
-    // PATCH: api/users/{id}
+    // PATCH: api/v1/users/{id}
     // ===================================
 
     [HttpPatch("{id:guid}")]
@@ -77,7 +79,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
 
 
     // ===================================
-    // DELETE: api/users/{id}
+    // DELETE: api/v1/users/{id}
     // ===================================
 
     [HttpDelete("{id:guid}")]

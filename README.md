@@ -59,29 +59,29 @@ waybon-api/
 
 ## 🔌 API Endpoints
 
-`/api/roles` — name must be unique, 3-25 characters. One role is marked as the default (`isDefault`); it's assigned to every new user and can't be deleted:
+`/api/v1/roles` — name must be unique, 3-25 characters. One role is marked as the default (`isDefault`); it's assigned to every new user and can't be deleted:
 
-| Method   | Endpoint          | Description             |
-| -------- | ----------------- | ----------------------- |
-| `GET`    | `/api/roles`      | List all roles          |
-| `GET`    | `/api/roles/{id}` | Get a role by ID        |
-| `POST`   | `/api/roles`      | Create a new role       |
-| `PUT`    | `/api/roles/{id}` | Update an existing role |
-| `DELETE` | `/api/roles/{id}` | Delete a role           |
+| Method   | Endpoint             | Description             |
+| -------- | -------------------- | ----------------------- |
+| `GET`    | `/api/v1/roles`      | List all roles          |
+| `GET`    | `/api/v1/roles/{id}` | Get a role by ID        |
+| `POST`   | `/api/v1/roles`      | Create a new role       |
+| `PUT`    | `/api/v1/roles/{id}` | Update an existing role |
+| `DELETE` | `/api/v1/roles/{id}` | Delete a role           |
 
 ```json
 { "name": "admin" }
 ```
 
-`/api/users` — email must be unique; password must be 8-128 characters. New accounts are always created with the default role:
+`/api/v1/users` — email must be unique; password must be 8-128 characters. New accounts are always created with the default role:
 
-| Method   | Endpoint          | Description                      |
-| -------- | ----------------- | -------------------------------- |
-| `GET`    | `/api/users`      | List all users                   |
-| `GET`    | `/api/users/{id}` | Get a user by ID                 |
-| `POST`   | `/api/users`      | Register a new user              |
-| `PATCH`  | `/api/users/{id}` | Update the username and/or email |
-| `DELETE` | `/api/users/{id}` | Delete a user                    |
+| Method   | Endpoint             | Description                      |
+| -------- | -------------------- | -------------------------------- |
+| `GET`    | `/api/v1/users`      | List all users                   |
+| `GET`    | `/api/v1/users/{id}` | Get a user by ID                 |
+| `POST`   | `/api/v1/users`      | Register a new user              |
+| `PATCH`  | `/api/v1/users/{id}` | Update the username and/or email |
+| `DELETE` | `/api/v1/users/{id}` | Delete a user                    |
 
 ```json
 {
@@ -90,6 +90,8 @@ waybon-api/
   "password": "supersecret123"
 }
 ```
+
+All endpoints are versioned in the URL (`/api/v1/...`); every response includes an `api-supported-versions` header.
 
 Errors follow the [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457) format: every error response includes `status`, `title`, and `detail`, plus `errors` for validation failures.
 
@@ -143,7 +145,7 @@ You can try the endpoints with Postman or any similar HTTP client.
    dotnet run --project src/Waybon.Api/Waybon.Api.csproj
    ```
 
-6. **Confirm it works** — `GET /api/roles` should return the `admin` and `user` roles, with `user` marked as `"isDefault": true`.
+6. **Confirm it works** — `GET /api/v1/roles` should return the `admin` and `user` roles, with `user` marked as `"isDefault": true`.
 
 ---
 
