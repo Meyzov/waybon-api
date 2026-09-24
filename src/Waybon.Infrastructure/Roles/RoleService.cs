@@ -18,6 +18,7 @@ public sealed class RoleService(AppDbContext context) : IRoleService
     {
         return await context.Roles
             .AsNoTracking()
+            .OrderBy(role => role.Id)
             .Select(role => new RoleResponse
             {
                 Id = role.Id,
@@ -56,8 +57,12 @@ public sealed class RoleService(AppDbContext context) : IRoleService
 
     public async Task<RoleResponse?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(name)) return null;
+
+        var normalizedName = name.Trim().ToLowerInvariant();
         return await context.Roles
             .AsNoTracking()
+            .Where(role => role.Name == normalizedName)
             .Select(role => new RoleResponse
             {
                 Id = role.Id,
@@ -66,9 +71,9 @@ public sealed class RoleService(AppDbContext context) : IRoleService
                 CreatedAt = role.CreatedAt,
                 UpdatedAt = role.UpdatedAt
             })
-            .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
     }
-
+    
 
     // ===================================
     // CreateAsync

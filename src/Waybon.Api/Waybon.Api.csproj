@@ -14,10 +14,6 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Waybon.Api</RootNamespace>
     <UserSecretsId>2b489b6a-98da-4ff4-83ae-72e8768d21a4</UserSecretsId>
   </PropertyGroup>
 

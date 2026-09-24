@@ -20,6 +20,7 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
     {
         return await context.Users
             .AsNoTracking()
+            .OrderBy(user => user.Id)
             .Select(user => new UserResponse
             {
                 Id = user.Id,

@@ -10,11 +10,18 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        if (exception is OperationCanceledException && httpContext.RequestAborted.IsCancellationRequested)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+            return true;
+        }
+
         var (statusCode, detail) = exception switch
         {
             DomainValidationException ex => (StatusCodes.Status400BadRequest, ex.Message),
             ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
             AccountLockedException ex => (StatusCodes.Status423Locked, ex.Message),
+            
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
         };
 
