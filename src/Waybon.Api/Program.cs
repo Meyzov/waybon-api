@@ -24,13 +24,13 @@ builder.Configuration.AddUserSecrets<Program>();
 // ===================================
 
 builder.Services.AddSerilog(logger => logger
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+    .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.Console(
         theme: PastelConsoleTheme.Theme,
-        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u4}] {SourceContext}{NewLine}       {Message:lj}{NewLine}{Exception}"));
+        outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u4}] {SourceContext}{NewLine}----------------- {Message:lj}{NewLine}{Exception}{NewLine}",
+        applyThemeToRedirectedOutput: true)
+    );
 
 
 // ===================================
@@ -89,7 +89,16 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var app = builder.Build();
 
 app.UseForwardedHeaders();
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.GetLevel = (httpContext, _, exception) => httpContext.Response.StatusCode switch
+    {
+        >= 500 => LogEventLevel.Error,
+        >= 400 => LogEventLevel.Warning,
+        _ when exception is not null => LogEventLevel.Error,
+        _ => LogEventLevel.Information
+    };
+});
 app.UseExceptionHandler();
 app.MapControllers();
 app.Run();
