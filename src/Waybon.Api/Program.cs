@@ -1,7 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.HttpOverrides;
+using Serilog;
+using Serilog.Events;
 using Waybon.Api.Exceptions;
+using Waybon.Api.Logging;
 using Waybon.Infrastructure;
+
 
 // ===================================
 // Builder
@@ -13,6 +17,20 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = AppContext.BaseDirectory
 });
 builder.Configuration.AddUserSecrets<Program>();
+
+
+// ===================================
+// Logging
+// ===================================
+
+builder.Services.AddSerilog(logger => logger
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        theme: PastelConsoleTheme.Theme,
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u4}] {SourceContext}{NewLine}       {Message:lj}{NewLine}{Exception}"));
 
 
 // ===================================
@@ -71,6 +89,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+app.UseSerilogRequestLogging();
 app.UseExceptionHandler();
 app.MapControllers();
 app.Run();
