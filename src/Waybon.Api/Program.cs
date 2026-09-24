@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 using Waybon.Api.Exceptions;
 using Waybon.Api.Logging;
 using Waybon.Infrastructure;
@@ -23,13 +24,16 @@ builder.Configuration.AddUserSecrets<Program>();
 // Logging
 // ===================================
 
+var forceConsoleColors = builder.Configuration.GetValue<bool>("Console:ForceColors");
+var consoleTheme = forceConsoleColors ? AnsiConsoleTheme.Sixteen : PastelConsoleTheme.Theme;
+
 builder.Services.AddSerilog(logger => logger
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.Console(
-        theme: PastelConsoleTheme.Theme,
+        theme: consoleTheme,
         outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u4}] {SourceContext}{NewLine}----------------- {Message:lj}{NewLine}{Exception}{NewLine}",
-        applyThemeToRedirectedOutput: true)
+        applyThemeToRedirectedOutput: forceConsoleColors)
     );
 
 
