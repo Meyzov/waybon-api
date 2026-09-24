@@ -2,7 +2,7 @@ using Serilog.Sinks.SystemConsole.Themes;
 
 namespace Waybon.Api.Logging;
 
-public static class PastelConsoleTheme
+public static class LocalConsoleTheme
 {
     // ===================================
     // Styles

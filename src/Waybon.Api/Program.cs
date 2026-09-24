@@ -2,11 +2,9 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
-using Serilog.Sinks.SystemConsole.Themes;
 using Waybon.Api.Exceptions;
 using Waybon.Api.Logging;
 using Waybon.Infrastructure;
-
 
 // ===================================
 // Builder
@@ -25,7 +23,7 @@ builder.Configuration.AddUserSecrets<Program>();
 // ===================================
 
 var forceConsoleColors = builder.Configuration.GetValue<bool>("Console:ForceColors");
-var consoleTheme = forceConsoleColors ? AnsiConsoleTheme.Sixteen : PastelConsoleTheme.Theme;
+var consoleTheme = forceConsoleColors ? RenderConsoleTheme.Theme : LocalConsoleTheme.Theme;
 
 builder.Services.AddSerilog(logger => logger
     .ReadFrom.Configuration(builder.Configuration)

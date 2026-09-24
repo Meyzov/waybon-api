@@ -95,6 +95,8 @@ All endpoints are versioned in the URL (`/api/v1/...`); every response includes 
 
 Errors follow the [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457) format: every error response includes `status`, `title`, and `detail`, plus `errors` for validation failures.
 
+Logging uses [Serilog](https://serilog.net/): one line per request, with the level based on the status code (`INFO` for 2xx, `WARN` for 4xx, `EROR` for 5xx). Log levels are configured in the `Serilog` section of `appsettings.json`.
+
 You can try the endpoints with Postman or any similar HTTP client.
 
 ---
@@ -160,7 +162,13 @@ You can try the endpoints with Postman or any similar HTTP client.
    | Docker Build Context | `.`          |
    | Start Command        | Leave empty  |
 
-2. Add the environment variable `ConnectionStrings__DefaultConnection` with the Supabase session pooler connection string, ending in `;Maximum Pool Size=20`.
+2. Add the environment variables:
+
+   | Variable                               | Value                                                             |
+   | -------------------------------------- | ----------------------------------------------------------------- |
+   | `ConnectionStrings__DefaultConnection` | Supabase session pooler string ending in `;Maximum Pool Size=20`  |
+   | `Console__ForceColors`                 | `true` — enables colored logs in the Render log viewer (optional) |
+
 3. Deploy.
 4. The image doesn't run migrations or the seed script automatically — from your machine, pointed at the same Supabase database, run the migration and seed commands from [Local Setup](#local-setup) (steps 3 and 4) once.
 
