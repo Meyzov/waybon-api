@@ -42,6 +42,7 @@ builder.Services.AddSerilog(logger => logger
 builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
+builder.Services.AddHealthChecks();
 
 
 // ===================================
@@ -93,14 +94,24 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseSerilogRequestLogging(options =>
 {
-    options.GetLevel = (httpContext, _, exception) => httpContext.Response.StatusCode switch
+    options.GetLevel = (httpContext, _, exception) =>
     {
-        >= 500 => LogEventLevel.Error,
-        >= 400 => LogEventLevel.Warning,
-        _ when exception is not null => LogEventLevel.Error,
-        _ => LogEventLevel.Information
+        var statusCode = httpContext.Response.StatusCode;
+        if (httpContext.Request.Path.StartsWithSegments("/health") && statusCode < 400)
+        {
+            return LogEventLevel.Verbose;
+        }
+
+        return statusCode switch
+        {
+            >= 500 => LogEventLevel.Error,
+            >= 400 => LogEventLevel.Warning,
+            _ when exception is not null => LogEventLevel.Error,
+            _ => LogEventLevel.Information
+        };
     };
 });
 app.UseExceptionHandler();
+app.MapHealthChecks("/health");
 app.MapControllers();
 app.Run();

@@ -93,9 +93,11 @@ waybon-api/
 
 All endpoints are versioned in the URL (`/api/v1/...`); every response includes an `api-supported-versions` header.
 
+`GET /health` returns `Healthy` while the API is running. It isn't versioned and doesn't check the database; Render uses it to know the service is up.
+
 Errors follow the [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457) format: every error response includes `status`, `title`, and `detail`, plus `errors` for validation failures.
 
-Logging uses [Serilog](https://serilog.net/): one line per request, with the level based on the status code (`INFO` for 2xx, `WARN` for 4xx, `EROR` for 5xx). Log levels are configured in the `Serilog` section of `appsettings.json`.
+Logging uses [Serilog](https://serilog.net/): one line per request, with the level based on the status code (`INFO` for 2xx, `WARN` for 4xx, `EROR` for 5xx); successful `/health` checks are not logged. Log levels are configured in the `Serilog` section of `appsettings.json`.
 
 You can try the endpoints with Postman or any similar HTTP client.
 
@@ -161,6 +163,7 @@ You can try the endpoints with Postman or any similar HTTP client.
    | Dockerfile Path      | `Dockerfile` |
    | Docker Build Context | `.`          |
    | Start Command        | Leave empty  |
+   | Health Check Path    | `/health`    |
 
 2. Add the environment variables:
 
