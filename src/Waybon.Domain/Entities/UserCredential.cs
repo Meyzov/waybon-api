@@ -137,4 +137,20 @@ public sealed class UserCredential
         LockedUntil = null;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
+
+
+    // ===================================
+    // Password
+    // ===================================
+
+    public void ChangePassword(string newPasswordHash)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        PasswordHash = ValidatePasswordHash(newPasswordHash);
+        FailedLoginAttempts = 0;
+        LockedUntil = null;
+        PasswordChangedAt = now;
+        UpdatedAt = now;
+    }
 }

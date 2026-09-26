@@ -41,26 +41,6 @@ public sealed class UsersController(IUserService userService) : ControllerBase
 
 
     // ===================================
-    // POST: api/v1/users
-    // ===================================
-
-    [HttpPost]
-    public async Task<ActionResult<UserResponse>> Create(CreateUserRequest request, CancellationToken cancellationToken)
-    {
-        var user = await userService.CreateAsync(request, cancellationToken);
-        return CreatedAtAction
-        (
-            nameof(GetById),
-            new
-            {
-                id = user.Id
-            },
-            user
-        );
-    }
-
-
-    // ===================================
     // PATCH: api/v1/users/{id}
     // ===================================
 

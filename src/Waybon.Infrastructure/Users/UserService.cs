@@ -1,9 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using Waybon.Application.Common.Abstractions;
 using Waybon.Application.Common.Exceptions;
-using Waybon.Application.Roles.Abstractions;
 using Waybon.Application.Users.Abstractions;
 using Waybon.Application.Users.Dtos;
 using Waybon.Domain.Entities;
@@ -11,7 +9,7 @@ using Waybon.Infrastructure.Persistence;
 
 namespace Waybon.Infrastructure.Users;
 
-public sealed class UserService(AppDbContext context, IRoleService roleService, IPasswordHasher passwordHasher) : IUserService
+public sealed class UserService(AppDbContext context) : IUserService
 {
     // ===================================
     // Mapping
@@ -57,35 +55,6 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
             .Where(user => user.Id == id)
             .Select(ToResponseProjection)
             .FirstOrDefaultAsync(cancellationToken);
-    }
-
-
-    // ===================================
-    // CreateAsync
-    // ===================================
-
-    public async Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
-    {
-        var defaultRole = await roleService.GetDefaultAsync(cancellationToken) ?? throw new InvalidOperationException("No default role is configured.");
-
-        var newUser = new User(request.Username, request.Email, defaultRole.Id);
-        var passwordHash = passwordHasher.HashPassword(request.Password);
-        var newCredential = new UserCredential(newUser.Id, passwordHash);
-
-        context.Users.Add(newUser);
-        context.UserCredentials.Add(newCredential);
-
-        try
-        {
-            await context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
-        {
-            context.ChangeTracker.Clear();
-            throw new ConflictException("A user with that email already exists.");
-        }
-
-        return ToResponse(newUser);
     }
 
 

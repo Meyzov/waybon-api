@@ -1,10 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Waybon.Application.Auth.Abstractions;
 using Waybon.Application.Common.Abstractions;
+using Waybon.Application.Emails.Abstractions;
 using Waybon.Application.Roles.Abstractions;
 using Waybon.Application.Users.Abstractions;
+using Waybon.Infrastructure.Auth;
 using Waybon.Infrastructure.Common;
+using Waybon.Infrastructure.Emails;
 using Waybon.Infrastructure.Persistence;
 using Waybon.Infrastructure.Roles;
 using Waybon.Infrastructure.Users;
@@ -44,6 +49,32 @@ public static class DependencyInjection
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuthService, AuthService>();
+
+
+        // ===================================
+        // Email
+        // ===================================
+
+        services.AddOptions<BrevoOptions>()
+            .Bind(configuration.GetSection(BrevoOptions.SectionName))
+            .Validate
+            (
+                brevo => !string.IsNullOrWhiteSpace(brevo.ApiKey)
+                    && !string.IsNullOrWhiteSpace(brevo.SenderEmail)
+                    && !string.IsNullOrWhiteSpace(brevo.SenderName),
+                "The 'Brevo' settings (ApiKey, SenderEmail, SenderName) are not fully configured."
+            )
+            .ValidateOnStart();
+
+        services.AddHttpClient<IEmailSender, BrevoEmailSender>((serviceProvider, client) =>
+        {
+            var brevo = serviceProvider.GetRequiredService<IOptions<BrevoOptions>>().Value;
+
+            client.BaseAddress = new Uri("https://api.brevo.com/v3/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+            client.DefaultRequestHeaders.Add("api-key", brevo.ApiKey);
+        });
 
         return services;
     }

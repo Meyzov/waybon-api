@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using Waybon.Domain.Entities;
 
-namespace Waybon.Application.Users.Dtos;
+namespace Waybon.Application.Auth.Dtos;
 
-public sealed class CreateUserRequest
+public sealed class RegisterRequest
 {
     [Required]
     [MinLength(User.UsernameMinLength)]
@@ -12,6 +12,7 @@ public sealed class CreateUserRequest
 
     [Required]
     [EmailAddress]
+    [MaxLength(User.EmailMaxLength)]
     public string Email { get; set; } = string.Empty;
 
     [Required]

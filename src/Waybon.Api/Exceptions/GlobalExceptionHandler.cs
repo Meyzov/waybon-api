@@ -22,7 +22,8 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
             DomainValidationException ex => (StatusCodes.Status400BadRequest, ex.Message),
             ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
             AccountLockedException ex => (StatusCodes.Status423Locked, ex.Message),
-            
+            EmailDeliveryException ex => (StatusCodes.Status503ServiceUnavailable, ex.Message),
+
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
         };
 
