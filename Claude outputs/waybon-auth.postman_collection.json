@@ -1,0 +1,291 @@
+{
+  "info": {
+    "name": "Waybon - Auth",
+    "description": "Register, login and email verification flow for the Waybon API. Set the 'email' variable to a real inbox you can read before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "username", "value": "tester" },
+    { "key": "email", "value": "YOUR_REAL_EMAIL" },
+    { "key": "password", "value": "supersecret123" },
+    { "key": "verificationToken", "value": "" },
+    { "key": "verificationCode", "value": "" },
+    { "key": "sessionToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Register",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.test('Returns the user', () => {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.id).to.be.a('string');",
+              "    pm.expect(body.email).to.eql(pm.collectionVariables.get('email').toLowerCase());",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/register"
+      }
+    },
+    {
+      "name": "02 - Login (unverified) → 403 + verificationToken",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+              "const body = pm.response.json();",
+              "pm.test('Code is email_not_verified', () => pm.expect(body.code).to.eql('email_not_verified'));",
+              "pm.test('Returns a verification token', () => pm.expect(body.verificationToken).to.be.a('string'));",
+              "pm.collectionVariables.set('verificationToken', body.verificationToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login"
+      }
+    },
+    {
+      "name": "03 - Send verification code → 204",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verificationToken\": \"{{verificationToken}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/verification-code"
+      }
+    },
+    {
+      "name": "04 - Send code again too soon → 429",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('429 Too Many Requests', () => pm.response.to.have.status(429));",
+              "pm.test('Has Retry-After header', () => pm.response.to.have.header('Retry-After'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verificationToken\": \"{{verificationToken}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/verification-code"
+      }
+    },
+    {
+      "name": "05 - Verify with wrong code → 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('Generic message', () => pm.expect(pm.response.json().detail).to.eql('Invalid or expired code.'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verificationToken\": \"{{verificationToken}}\",\n  \"code\": \"000000\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/verify-email"
+      }
+    },
+    {
+      "name": "06 - Verify with invalid format → 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('Validation error on Code', () => pm.expect(pm.response.json().errors).to.have.property('Code'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verificationToken\": \"{{verificationToken}}\",\n  \"code\": \"12ab\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/verify-email"
+      }
+    },
+    {
+      "name": "07 - Verify email → 200 + session (set verificationCode first)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Returns a session token', () => pm.expect(body.token).to.be.a('string'));",
+              "pm.collectionVariables.set('sessionToken', body.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verificationToken\": \"{{verificationToken}}\",\n  \"code\": \"{{verificationCode}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/verify-email"
+      }
+    },
+    {
+      "name": "08 - Reuse verification token → 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('Token no longer valid', () => pm.expect(pm.response.json().detail).to.eql('Invalid or expired verification token.'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verificationToken\": \"{{verificationToken}}\",\n  \"code\": \"{{verificationCode}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/verify-email"
+      }
+    },
+    {
+      "name": "09 - Login (verified) → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('New session token', () => pm.expect(body.token).to.not.eql(pm.collectionVariables.get('sessionToken')));",
+              "pm.collectionVariables.set('sessionToken', body.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login"
+      }
+    },
+    {
+      "name": "10 - Login with wrong password → 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+              "pm.test('Generic message', () => pm.expect(pm.response.json().detail).to.eql('Invalid email or password.'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrongpassword\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login"
+      }
+    },
+    {
+      "name": "11 - Register with verified email → 409",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/register"
+      }
+    }
+  ]
+}

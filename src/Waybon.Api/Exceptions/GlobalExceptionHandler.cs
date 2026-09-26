@@ -24,10 +24,12 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
         var (statusCode, detail) = exception switch
         {
             DomainValidationException ex => (StatusCodes.Status400BadRequest, ex.Message),
+            BadRequestException ex => (StatusCodes.Status400BadRequest, ex.Message),
             UnauthorizedException ex => (StatusCodes.Status401Unauthorized, ex.Message),
             ForbiddenException ex => (StatusCodes.Status403Forbidden, ex.Message),
             ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
             AccountLockedException ex => (StatusCodes.Status423Locked, ex.Message),
+            TooManyRequestsException ex => (StatusCodes.Status429TooManyRequests, ex.Message),
             EmailDeliveryException ex => (StatusCodes.Status503ServiceUnavailable, ex.Message),
 
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
@@ -55,6 +57,17 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
         if (exception is ForbiddenException forbiddenException)
         {
             problemDetails.Extensions["code"] = forbiddenException.Code;
+
+            foreach (var (key, value) in forbiddenException.Extensions)
+            {
+                problemDetails.Extensions[key] = value;
+            }
+        }
+
+        if (exception is TooManyRequestsException tooManyRequestsException)
+        {
+            var seconds = (int)Math.Ceiling(tooManyRequestsException.RetryAfter.TotalSeconds);
+            httpContext.Response.Headers.RetryAfter = seconds.ToString();
         }
 
         httpContext.Response.StatusCode = statusCode;

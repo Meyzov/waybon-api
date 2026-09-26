@@ -78,6 +78,13 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Add("api-key", brevo.ApiKey);
         });
 
+        services.AddMemoryCache();
+        services.AddSingleton<IEmailSendLimiter, MemoryEmailSendLimiter>();
+
+        services.AddSingleton<EmailQueue>();
+        services.AddSingleton<IEmailQueue>(serviceProvider => serviceProvider.GetRequiredService<EmailQueue>());
+        services.AddHostedService<EmailQueueProcessor>();
+
         return services;
     }
 }
