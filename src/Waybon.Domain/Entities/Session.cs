@@ -26,7 +26,7 @@ public sealed class Session
         UserId = ValidateUserId(userId);
         TokenHash = ValidateTokenHash(tokenHash);
         CreatedAt = DateTimeOffset.UtcNow;
-        UpdatedAt = CreatedAt;
+        LastAppActivityAt = CreatedAt;
     }
 
 
@@ -39,7 +39,7 @@ public sealed class Session
     public string TokenHash { get; private set; } = null!;
 
     public DateTimeOffset CreatedAt { get; private set; }
-    public DateTimeOffset UpdatedAt { get; private set; }
+    public DateTimeOffset LastAppActivityAt { get; private set; }
 
 
     // ===================================
@@ -70,16 +70,5 @@ public sealed class Session
         }
 
         return tokenHash;
-    }
-
-
-    // ===================================
-    // Token
-    // ===================================
-
-    public void UpdateTokenHash(string newTokenHash)
-    {
-        TokenHash = ValidateTokenHash(newTokenHash);
-        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

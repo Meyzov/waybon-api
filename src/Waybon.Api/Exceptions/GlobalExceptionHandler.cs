@@ -9,6 +9,10 @@ namespace Waybon.Api.Exceptions;
 
 public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
+    // ===================================
+    // TryHandleAsync
+    // ===================================
+
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         if (exception is OperationCanceledException && httpContext.RequestAborted.IsCancellationRequested)
@@ -20,6 +24,8 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
         var (statusCode, detail) = exception switch
         {
             DomainValidationException ex => (StatusCodes.Status400BadRequest, ex.Message),
+            UnauthorizedException ex => (StatusCodes.Status401Unauthorized, ex.Message),
+            ForbiddenException ex => (StatusCodes.Status403Forbidden, ex.Message),
             ConflictException ex => (StatusCodes.Status409Conflict, ex.Message),
             AccountLockedException ex => (StatusCodes.Status423Locked, ex.Message),
             EmailDeliveryException ex => (StatusCodes.Status503ServiceUnavailable, ex.Message),
@@ -39,18 +45,25 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
             );
         }
 
+        var problemDetails = new ProblemDetails
+        {
+            Status = statusCode,
+            Title = ReasonPhrases.GetReasonPhrase(statusCode),
+            Detail = detail
+        };
+
+        if (exception is ForbiddenException forbiddenException)
+        {
+            problemDetails.Extensions["code"] = forbiddenException.Code;
+        }
+
         httpContext.Response.StatusCode = statusCode;
 
         return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
             Exception = exception,
-            ProblemDetails = new ProblemDetails
-            {
-                Status = statusCode,
-                Title = ReasonPhrases.GetReasonPhrase(statusCode),
-                Detail = detail
-            }
+            ProblemDetails = problemDetails
         });
     }
 }

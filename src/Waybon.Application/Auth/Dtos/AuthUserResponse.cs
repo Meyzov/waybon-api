@@ -1,6 +1,6 @@
 namespace Waybon.Application.Auth.Dtos;
 
-public sealed class RegisterResponse
+public sealed class AuthUserResponse
 {
     public Guid Id { get; init; }
     public string Username { get; init; } = string.Empty;

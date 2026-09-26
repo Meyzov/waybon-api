@@ -121,7 +121,7 @@ public sealed class User
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    private static string NormalizeEmail(string email)
+    public static string NormalizeEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
         {

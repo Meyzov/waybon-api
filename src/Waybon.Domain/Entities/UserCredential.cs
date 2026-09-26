@@ -93,6 +93,11 @@ public sealed class UserCredential
     // Login attempts
     // ===================================
 
+    public bool IsLocked()
+    {
+        return LockedUntil > DateTimeOffset.UtcNow;
+    }
+
     public void RegisterFailedLogin()
     {
         var now = DateTimeOffset.UtcNow;
@@ -125,7 +130,7 @@ public sealed class UserCredential
 
     public void RegisterSuccessfulLogin()
     {
-        if (LockedUntil > DateTimeOffset.UtcNow)
+        if (IsLocked())
         {
             throw new AccountLockedException
             (

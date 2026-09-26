@@ -47,9 +47,11 @@ public static class DependencyInjection
         // ===================================
 
         services.AddScoped<IRoleService, RoleService>();
-        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddSingleton<ITokenGenerator, SecureTokenGenerator>();
 
 
         // ===================================

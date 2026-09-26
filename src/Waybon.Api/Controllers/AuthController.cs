@@ -15,9 +15,21 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     // ===================================
 
     [HttpPost("register")]
-    public async Task<ActionResult<RegisterResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<AuthUserResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
         var response = await authService.RegisterAsync(request, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+
+    // ===================================
+    // POST: api/v1/auth/login
+    // ===================================
+
+    [HttpPost("login")]
+    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
+    {
+        var response = await authService.LoginAsync(request, cancellationToken);
+        return Ok(response);
     }
 }
