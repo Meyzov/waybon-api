@@ -31,7 +31,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             user => user.Username
         )
         .IsRequired()
-        .HasMaxLength(30);
+        .HasMaxLength(User.UsernameMaxLength);
 
 
         // ===================================
@@ -43,7 +43,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             user => user.Email
         )
         .IsRequired()
-        .HasMaxLength(255);
+        .HasMaxLength(User.EmailMaxLength);
 
         builder.HasIndex
         (

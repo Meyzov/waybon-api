@@ -18,4 +18,8 @@
     <UserSecretsId>2b489b6a-98da-4ff4-83ae-72e8768d21a4</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+
 </Project>

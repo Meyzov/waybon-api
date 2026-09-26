@@ -31,7 +31,7 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
             role => role.Name
         )
         .IsRequired()
-        .HasMaxLength(25);
+        .HasMaxLength(Role.NameMaxLength);
 
         builder.HasIndex
         (

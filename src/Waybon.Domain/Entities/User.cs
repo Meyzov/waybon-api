@@ -6,6 +6,15 @@ namespace Waybon.Domain.Entities;
 public sealed class User
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    public const int UsernameMinLength = 3;
+    public const int UsernameMaxLength = 20;
+    public const int EmailMaxLength = 255;
+
+
+    // ===================================
     // Constructors
     // ===================================
 
@@ -41,7 +50,7 @@ public sealed class User
 
 
     // ===================================
-    // Methods
+    // Username
     // ===================================
 
     public void UpdateUsername(string newUsername)
@@ -63,34 +72,44 @@ public sealed class User
             );
         }
 
-        var normalizedName = username.Trim();
+        var normalizedUsername = username.Trim();
 
-        if (normalizedName.Any(char.IsWhiteSpace))
+        if (normalizedUsername.Length < UsernameMinLength)
         {
             throw new DomainValidationException
             (
-                "Username cannot contain spaces."
+                $"Username must be at least {UsernameMinLength} characters long."
             );
         }
 
-        if (normalizedName.Length < 3)
+        if (normalizedUsername.Length > UsernameMaxLength)
         {
             throw new DomainValidationException
             (
-                "Username must be at least 3 characters long."
+                $"Username cannot exceed {UsernameMaxLength} characters."
             );
         }
 
-        if (normalizedName.Length > 30)
+        if (!normalizedUsername.All(IsAllowedUsernameCharacter))
         {
             throw new DomainValidationException
             (
-                "Username cannot exceed 30 characters."
+                "Username can only contain letters, numbers, dots, hyphens and underscores."
             );
         }
 
-        return normalizedName;
+        return normalizedUsername;
     }
+
+    private static bool IsAllowedUsernameCharacter(char character)
+    {
+        return char.IsAsciiLetterOrDigit(character) || character is '.' or '-' or '_';
+    }
+
+
+    // ===================================
+    // Email
+    // ===================================
 
     public void UpdateEmail(string newEmail)
     {
@@ -113,6 +132,14 @@ public sealed class User
         }
 
         var normalizedEmail = email.Trim();
+
+        if (normalizedEmail.Length > EmailMaxLength)
+        {
+            throw new DomainValidationException
+            (
+                $"Email cannot exceed {EmailMaxLength} characters."
+            );
+        }
 
         try
         {
@@ -137,6 +164,19 @@ public sealed class User
         }
     }
 
+    public void VerifyEmail()
+    {
+        if (EmailVerified) return;
+
+        EmailVerified = true;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+
+    // ===================================
+    // Role
+    // ===================================
+
     public void UpdateRoleId(Guid newRoleId)
     {
         var validatedRoleId = ValidateRoleId(newRoleId);
@@ -159,6 +199,11 @@ public sealed class User
         return roleId;
     }
 
+
+    // ===================================
+    // Status
+    // ===================================
+
     public void Activate()
     {
         if (IsActive) return;
@@ -172,14 +217,6 @@ public sealed class User
         if (!IsActive) return;
 
         IsActive = false;
-        UpdatedAt = DateTimeOffset.UtcNow;
-    }
-
-    public void VerifyEmail()
-    {
-        if (EmailVerified) return;
-
-        EmailVerified = true;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

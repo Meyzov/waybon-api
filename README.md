@@ -59,7 +59,7 @@ waybon-api/
 
 ## 🔌 API Endpoints
 
-`/api/v1/roles` — name must be unique, 3-25 characters. One role is marked as the default (`isDefault`); it's assigned to every new user and can't be deleted:
+`/api/v1/roles` — name must be unique, 3-15 characters (stored in lowercase). One role is marked as the default (`isDefault`); it's assigned to every new user and can't be deleted:
 
 | Method   | Endpoint             | Description             |
 | -------- | -------------------- | ----------------------- |
@@ -73,7 +73,7 @@ waybon-api/
 { "name": "admin" }
 ```
 
-`/api/v1/users` — email must be unique; password must be 8-128 characters. New accounts are always created with the default role:
+`/api/v1/users` — username must be 3-20 characters, using only letters, numbers, dots (`.`), hyphens (`-`) and underscores (`_`), and doesn't need to be unique; email must be unique (up to 255 characters); password must be 8-128 characters. New accounts are always created with the default role:
 
 | Method   | Endpoint             | Description                      |
 | -------- | -------------------- | -------------------------------- |
@@ -93,11 +93,11 @@ waybon-api/
 
 All endpoints are versioned in the URL (`/api/v1/...`); every response includes an `api-supported-versions` header.
 
-`GET /health` returns `Healthy` while the API is running. It isn't versioned and doesn't check the database; Render uses it to know the service is up.
+`GET /health` (and the root `/`) returns `Healthy` while the API is running. It isn't versioned and doesn't check the database; Render uses it to know the service is up.
 
 Errors follow the [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457) format: every error response includes `status`, `title`, and `detail`, plus `errors` for validation failures.
 
-Logging uses [Serilog](https://serilog.net/): one line per request, with the level based on the status code (`INFO` for 2xx, `WARN` for 4xx, `EROR` for 5xx); successful `/health` checks are not logged. Log levels are configured in the `Serilog` section of `appsettings.json`.
+Logging uses [Serilog](https://serilog.net/): one line per request, with the level based on the status code (`INFO` for 2xx, `WARN` for 4xx, `EROR` for 5xx); successful health checks (`/` and `/health`) are not logged. Log levels are configured in the `Serilog` section of `appsettings.json`.
 
 You can try the endpoints with Postman or any similar HTTP client.
 

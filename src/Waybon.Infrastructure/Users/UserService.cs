@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Waybon.Application.Common.Abstractions;
@@ -13,6 +14,25 @@ namespace Waybon.Infrastructure.Users;
 public sealed class UserService(AppDbContext context, IRoleService roleService, IPasswordHasher passwordHasher) : IUserService
 {
     // ===================================
+    // Mapping
+    // ===================================
+
+    private static readonly Expression<Func<User, UserResponse>> ToResponseProjection = user => new UserResponse
+    {
+        Id = user.Id,
+        Username = user.Username,
+        Email = user.Email,
+        RoleId = user.RoleId,
+        IsActive = user.IsActive,
+        EmailVerified = user.EmailVerified,
+        CreatedAt = user.CreatedAt,
+        UpdatedAt = user.UpdatedAt
+    };
+
+    private static readonly Func<User, UserResponse> ToResponse = ToResponseProjection.Compile();
+
+
+    // ===================================
     // GetAllAsync
     // ===================================
 
@@ -21,17 +41,7 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
         return await context.Users
             .AsNoTracking()
             .OrderBy(user => user.Id)
-            .Select(user => new UserResponse
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                RoleId = user.RoleId,
-                IsActive = user.IsActive,
-                EmailVerified = user.EmailVerified,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
-            })
+            .Select(ToResponseProjection)
             .ToListAsync(cancellationToken);
     }
 
@@ -44,18 +54,9 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
     {
         return await context.Users
             .AsNoTracking()
-            .Select(user => new UserResponse
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                RoleId = user.RoleId,
-                IsActive = user.IsActive,
-                EmailVerified = user.EmailVerified,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
-            })
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            .Where(user => user.Id == id)
+            .Select(ToResponseProjection)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
 
@@ -84,17 +85,7 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
             throw new ConflictException("A user with that email already exists.");
         }
 
-        return new UserResponse
-        {
-            Id = newUser.Id,
-            Username = newUser.Username,
-            Email = newUser.Email,
-            RoleId = newUser.RoleId,
-            IsActive = newUser.IsActive,
-            EmailVerified = newUser.EmailVerified,
-            CreatedAt = newUser.CreatedAt,
-            UpdatedAt = newUser.UpdatedAt
-        };
+        return ToResponse(newUser);
     }
 
 
@@ -127,17 +118,7 @@ public sealed class UserService(AppDbContext context, IRoleService roleService, 
             throw new ConflictException("A user with that email already exists.");
         }
 
-        return new UserResponse
-        {
-            Id = user.Id,
-            Username = user.Username,
-            Email = user.Email,
-            RoleId = user.RoleId,
-            IsActive = user.IsActive,
-            EmailVerified = user.EmailVerified,
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
-        };
+        return ToResponse(user);
     }
 
 

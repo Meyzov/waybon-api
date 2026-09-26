@@ -5,6 +5,13 @@ namespace Waybon.Domain.Entities;
 public sealed class Session
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    public const int TokenHashLength = 64;
+
+
+    // ===================================
     // Constructors
     // ===================================
 
@@ -30,12 +37,13 @@ public sealed class Session
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
     public string TokenHash { get; private set; } = null!;
+
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
 
     // ===================================
-    // Methods
+    // Validation
     // ===================================
 
     private static Guid ValidateUserId(Guid userId)
@@ -51,22 +59,27 @@ public sealed class Session
         return userId;
     }
 
-    public void UpdateTokenHash(string newTokenHash)
-    {
-        TokenHash = ValidateTokenHash(newTokenHash);
-        UpdatedAt = DateTimeOffset.UtcNow;
-    }
-
     private static string ValidateTokenHash(string tokenHash)
     {
-        if (string.IsNullOrWhiteSpace(tokenHash))
+        if (string.IsNullOrWhiteSpace(tokenHash) || tokenHash.Length != TokenHashLength)
         {
             throw new DomainValidationException
             (
-                "Token hash is required."
+                $"Token hash must be exactly {TokenHashLength} characters long."
             );
         }
 
         return tokenHash;
+    }
+
+
+    // ===================================
+    // Token
+    // ===================================
+
+    public void UpdateTokenHash(string newTokenHash)
+    {
+        TokenHash = ValidateTokenHash(newTokenHash);
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

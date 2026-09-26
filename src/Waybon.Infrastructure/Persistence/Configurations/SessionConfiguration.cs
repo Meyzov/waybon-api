@@ -47,7 +47,7 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
             session => session.TokenHash
         )
         .IsRequired()
-        .HasMaxLength(64);
+        .HasMaxLength(Session.TokenHashLength);
 
         builder.HasIndex
         (

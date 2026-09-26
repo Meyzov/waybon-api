@@ -97,7 +97,10 @@ app.UseSerilogRequestLogging(options =>
     options.GetLevel = (httpContext, _, exception) =>
     {
         var statusCode = httpContext.Response.StatusCode;
-        if (httpContext.Request.Path.StartsWithSegments("/health") && statusCode < 400)
+        var path = httpContext.Request.Path;
+        var isHealthCheck = path == "/" || path.StartsWithSegments("/health");
+
+        if (isHealthCheck && statusCode < 400)
         {
             return LogEventLevel.Verbose;
         }
@@ -112,6 +115,7 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 app.UseExceptionHandler();
+app.MapHealthChecks("/");
 app.MapHealthChecks("/health");
 app.MapControllers();
 app.Run();

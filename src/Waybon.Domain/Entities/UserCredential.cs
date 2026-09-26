@@ -5,6 +5,15 @@ namespace Waybon.Domain.Entities;
 public sealed class UserCredential
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    public const int PasswordHashMaxLength = 128;
+    public const int MaxFailedLoginAttempts = 5;
+    public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
+
+    // ===================================
     // Constructors
     // ===================================
 
@@ -35,13 +44,14 @@ public sealed class UserCredential
     public string PasswordHash { get; private set; } = null!;
     public int FailedLoginAttempts { get; private set; }
     public DateTimeOffset? LockedUntil { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
     public DateTimeOffset PasswordChangedAt { get; private set; }
 
 
     // ===================================
-    // Methods
+    // Validation
     // ===================================
 
     private static Guid ValidateUserId(Guid userId)
@@ -67,8 +77,21 @@ public sealed class UserCredential
             );
         }
 
+        if (passwordHash.Length > PasswordHashMaxLength)
+        {
+            throw new DomainValidationException
+            (
+                $"Password hash cannot exceed {PasswordHashMaxLength} characters."
+            );
+        }
+
         return passwordHash;
     }
+
+
+    // ===================================
+    // Login attempts
+    // ===================================
 
     public void RegisterFailedLogin()
     {
@@ -92,9 +115,9 @@ public sealed class UserCredential
 
         FailedLoginAttempts++;
 
-        if (FailedLoginAttempts >= 5)
+        if (FailedLoginAttempts >= MaxFailedLoginAttempts)
         {
-            LockedUntil = now.AddMinutes(15);
+            LockedUntil = now.Add(LockoutDuration);
         }
 
         UpdatedAt = now;

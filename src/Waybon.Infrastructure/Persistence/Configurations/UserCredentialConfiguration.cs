@@ -47,7 +47,7 @@ public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserC
             uc => uc.PasswordHash
         )
         .IsRequired()
-        .HasMaxLength(128);
+        .HasMaxLength(UserCredential.PasswordHashMaxLength);
 
 
         // ===================================

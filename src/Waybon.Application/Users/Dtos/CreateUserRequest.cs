@@ -1,12 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using Waybon.Domain.Entities;
 
 namespace Waybon.Application.Users.Dtos;
 
 public sealed class CreateUserRequest
 {
     [Required]
-    [MinLength(3)]
-    [MaxLength(30)]
+    [MinLength(User.UsernameMinLength)]
+    [MaxLength(User.UsernameMaxLength)]
     public string Username { get; set; } = string.Empty;
 
     [Required]

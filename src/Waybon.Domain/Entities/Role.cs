@@ -5,6 +5,14 @@ namespace Waybon.Domain.Entities;
 public sealed class Role
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    public const int NameMinLength = 3;
+    public const int NameMaxLength = 15;
+
+
+    // ===================================
     // Constructors
     // ===================================
 
@@ -30,12 +38,13 @@ public sealed class Role
     public Guid Id { get; private set; }
     public string Name { get; private set; } = null!;
     public bool IsDefault { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
 
     // ===================================
-    // Methods
+    // Name
     // ===================================
 
     public void UpdateName(string newName)
@@ -58,24 +67,30 @@ public sealed class Role
         }
 
         var normalizedName = name.Trim();
-        if (normalizedName.Length < 3)
+
+        if (normalizedName.Length < NameMinLength)
         {
             throw new DomainValidationException
             (
-                "Role name must be at least 3 characters long."
+                $"Role name must be at least {NameMinLength} characters long."
             );
         }
 
-        if (normalizedName.Length > 25)
+        if (normalizedName.Length > NameMaxLength)
         {
             throw new DomainValidationException
             (
-                "Role name cannot exceed 25 characters."
+                $"Role name cannot exceed {NameMaxLength} characters."
             );
         }
 
         return normalizedName.ToLowerInvariant();
     }
+
+
+    // ===================================
+    // Default role
+    // ===================================
 
     public void MarkAsDefault()
     {

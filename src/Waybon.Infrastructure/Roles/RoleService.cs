@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Waybon.Application.Common.Exceptions;
@@ -11,6 +12,22 @@ namespace Waybon.Infrastructure.Roles;
 public sealed class RoleService(AppDbContext context) : IRoleService
 {
     // ===================================
+    // Mapping
+    // ===================================
+
+    private static readonly Expression<Func<Role, RoleResponse>> ToResponseProjection = role => new RoleResponse
+    {
+        Id = role.Id,
+        Name = role.Name,
+        IsDefault = role.IsDefault,
+        CreatedAt = role.CreatedAt,
+        UpdatedAt = role.UpdatedAt
+    };
+
+    private static readonly Func<Role, RoleResponse> ToResponse = ToResponseProjection.Compile();
+
+
+    // ===================================
     // GetAllAsync
     // ===================================
 
@@ -19,14 +36,7 @@ public sealed class RoleService(AppDbContext context) : IRoleService
         return await context.Roles
             .AsNoTracking()
             .OrderBy(role => role.Id)
-            .Select(role => new RoleResponse
-            {
-                Id = role.Id,
-                Name = role.Name,
-                IsDefault = role.IsDefault,
-                CreatedAt = role.CreatedAt,
-                UpdatedAt = role.UpdatedAt
-            })
+            .Select(ToResponseProjection)
             .ToListAsync(cancellationToken);
     }
 
@@ -39,15 +49,9 @@ public sealed class RoleService(AppDbContext context) : IRoleService
     {
         return await context.Roles
             .AsNoTracking()
-            .Select(role => new RoleResponse
-            {
-                Id = role.Id,
-                Name = role.Name,
-                IsDefault = role.IsDefault,
-                CreatedAt = role.CreatedAt,
-                UpdatedAt = role.UpdatedAt
-            })
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            .Where(role => role.Id == id)
+            .Select(ToResponseProjection)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
 
@@ -63,17 +67,10 @@ public sealed class RoleService(AppDbContext context) : IRoleService
         return await context.Roles
             .AsNoTracking()
             .Where(role => role.Name == normalizedName)
-            .Select(role => new RoleResponse
-            {
-                Id = role.Id,
-                Name = role.Name,
-                IsDefault = role.IsDefault,
-                CreatedAt = role.CreatedAt,
-                UpdatedAt = role.UpdatedAt
-            })
+            .Select(ToResponseProjection)
             .FirstOrDefaultAsync(cancellationToken);
     }
-    
+
 
     // ===================================
     // CreateAsync
@@ -94,14 +91,7 @@ public sealed class RoleService(AppDbContext context) : IRoleService
             throw new ConflictException("The role already exists.");
         }
 
-        return new RoleResponse
-        {
-            Id = newRole.Id,
-            Name = newRole.Name,
-            IsDefault = newRole.IsDefault,
-            CreatedAt = newRole.CreatedAt,
-            UpdatedAt = newRole.UpdatedAt
-        };
+        return ToResponse(newRole);
     }
 
 
@@ -126,14 +116,7 @@ public sealed class RoleService(AppDbContext context) : IRoleService
             throw new ConflictException("The role already exists.");
         }
 
-        return new RoleResponse
-        {
-            Id = role.Id,
-            Name = role.Name,
-            IsDefault = role.IsDefault,
-            CreatedAt = role.CreatedAt,
-            UpdatedAt = role.UpdatedAt
-        };
+        return ToResponse(role);
     }
 
 
@@ -178,15 +161,9 @@ public sealed class RoleService(AppDbContext context) : IRoleService
     {
         return await context.Roles
             .AsNoTracking()
-            .Select(role => new RoleResponse
-            {
-                Id = role.Id,
-                Name = role.Name,
-                IsDefault = role.IsDefault,
-                CreatedAt = role.CreatedAt,
-                UpdatedAt = role.UpdatedAt
-            })
-            .FirstOrDefaultAsync(r => r.IsDefault, cancellationToken);
+            .Where(role => role.IsDefault)
+            .Select(ToResponseProjection)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
 
@@ -224,14 +201,7 @@ public sealed class RoleService(AppDbContext context) : IRoleService
                     await transaction.CommitAsync(cancellationToken);
                 }
 
-                return new RoleResponse
-                {
-                    Id = role.Id,
-                    Name = role.Name,
-                    IsDefault = role.IsDefault,
-                    CreatedAt = role.CreatedAt,
-                    UpdatedAt = role.UpdatedAt
-                };
+                return ToResponse(role);
             });
         }
         catch (DbUpdateException ex) when (IsDefaultRoleViolation(ex))
@@ -258,7 +228,7 @@ public sealed class RoleService(AppDbContext context) : IRoleService
     {
         return ex.InnerException is PostgresException
         {
-            SqlState: PostgresErrorCodes.ForeignKeyViolation,
+            SqlState: PostgresErrorCodes.ForeignKeyViolation
         };
     }
 
