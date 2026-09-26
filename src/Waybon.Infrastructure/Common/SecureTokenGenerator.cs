@@ -36,4 +36,17 @@ public sealed class SecureTokenGenerator : ITokenGenerator
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
         return Convert.ToHexStringLower(hash);
     }
+
+
+    // ===================================
+    // GenerateNumericCode
+    // ===================================
+
+    public string GenerateNumericCode(int length)
+    {
+        var maxValue = (int)Math.Pow(10, length);
+        var code = RandomNumberGenerator.GetInt32(0, maxValue);
+
+        return code.ToString($"D{length}");
+    }
 }
