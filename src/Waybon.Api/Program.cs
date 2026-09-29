@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Net.Http.Headers;
 using Serilog;
 using Serilog.Events;
 using Waybon.Api.Exceptions;
@@ -17,6 +18,8 @@ const string RootPath = "/";
 const string HealthPath = "/health";
 const int ApiMajorVersion = 1;
 const int ApiMinorVersion = 0;
+const string CorsAllowedOriginsKey = "Cors:AllowedOrigins";
+const string AdminCorsPolicy = "AdminPanel";
 
 
 // ===================================
@@ -94,6 +97,23 @@ builder.Services.AddAuthRateLimiting();
 
 
 // ===================================
+// CORS
+// ===================================
+
+var allowedOrigins = builder.Configuration.GetSection(CorsAllowedOriginsKey).Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(AdminCorsPolicy, policy => policy
+        .WithOrigins(allowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .WithExposedHeaders(HeaderNames.RetryAfter)
+    );
+});
+
+
+// ===================================
 // Reverse proxy (Render)
 // ===================================
 
@@ -132,6 +152,7 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 app.UseExceptionHandler();
+app.UseCors(AdminCorsPolicy);
 app.UseRateLimiter();
 app.MapHealthChecks(RootPath);
 app.MapHealthChecks(HealthPath);

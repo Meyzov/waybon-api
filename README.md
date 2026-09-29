@@ -129,6 +129,8 @@ All endpoints are versioned in the URL (`/api/v1/...`); every response includes 
 
 `GET /health` (and the root `/`) returns `Healthy` while the API is running. It isn't versioned and doesn't check the database; Render uses it to know the service is up.
 
+Browser clients (the admin panel) must be listed in `Cors:AllowedOrigins`; `appsettings.json` allows the panel's local ports (`https://localhost:7180`, `http://localhost:5180`).
+
 Errors follow the [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457) format: every error response includes `status`, `title`, and `detail`, plus `errors` for validation failures and `code` for `403` responses.
 
 Logging uses [Serilog](https://serilog.net/): one line per request, with the level based on the status code (`INFO` for 2xx, `WARN` for 4xx, `EROR` for 5xx); successful health checks (`/` and `/health`) are not logged. Log levels are configured in the `Serilog` section of `appsettings.json`.
@@ -217,6 +219,7 @@ You can try the endpoints with Postman or any similar HTTP client.
    | `Brevo__SenderEmail`                   | Verified sender email in Brevo                                    |
    | `Brevo__SenderName`                    | `Waybon`                                                          |
    | `Console__ForceColors`                 | `true` — enables colored logs in the Render log viewer (optional) |
+   | `Cors__AllowedOrigins__0`             | URL of the deployed admin panel (add `__1`, `__2`… for more)      |
 
 3. Deploy.
 4. The image doesn't run migrations or the seed script automatically — from your machine, pointed at the same Supabase database, run the migration and seed commands from [Local Setup](#local-setup) (steps 4 and 5) once.
