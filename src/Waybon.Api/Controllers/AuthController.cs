@@ -1,5 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Waybon.Api.RateLimiting;
 using Waybon.Application.Auth.Abstractions;
 using Waybon.Application.Auth.Dtos;
 
@@ -15,6 +17,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     // ===================================
 
     [HttpPost("register")]
+    [EnableRateLimiting(RateLimitPolicies.Register)]
     public async Task<ActionResult<AuthUserResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
         var response = await authService.RegisterAsync(request, cancellationToken);
@@ -27,6 +30,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     // ===================================
 
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitPolicies.Login)]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var response = await authService.LoginAsync(request, cancellationToken);
@@ -39,6 +43,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     // ===================================
 
     [HttpPost("verification-code")]
+    [EnableRateLimiting(RateLimitPolicies.Verification)]
     public async Task<IActionResult> SendVerificationCode(SendVerificationCodeRequest request, CancellationToken cancellationToken)
     {
         await authService.SendVerificationCodeAsync(request, cancellationToken);
@@ -51,6 +56,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     // ===================================
 
     [HttpPost("verify-email")]
+    [EnableRateLimiting(RateLimitPolicies.Verification)]
     public async Task<ActionResult<LoginResponse>> VerifyEmail(VerifyEmailRequest request, CancellationToken cancellationToken)
     {
         var response = await authService.VerifyEmailAsync(request, cancellationToken);

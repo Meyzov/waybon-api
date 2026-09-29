@@ -4,6 +4,7 @@ using Serilog;
 using Serilog.Events;
 using Waybon.Api.Exceptions;
 using Waybon.Api.Logging;
+using Waybon.Api.RateLimiting;
 using Waybon.Infrastructure;
 
 // ===================================
@@ -86,6 +87,13 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 
 // ===================================
+// Rate limiting
+// ===================================
+
+builder.Services.AddAuthRateLimiting();
+
+
+// ===================================
 // Reverse proxy (Render)
 // ===================================
 
@@ -124,6 +132,7 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 app.UseExceptionHandler();
+app.UseRateLimiter();
 app.MapHealthChecks(RootPath);
 app.MapHealthChecks(HealthPath);
 app.MapControllers();
