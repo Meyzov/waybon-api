@@ -7,6 +7,18 @@ using Waybon.Api.Logging;
 using Waybon.Infrastructure;
 
 // ===================================
+// Constants
+// ===================================
+
+const string ForceConsoleColorsKey = "Console:ForceColors";
+const string ConsoleOutputTemplate = "[{Timestamp:HH:mm:ss}] [{Level:u4}] {SourceContext}{NewLine}----------------- {Message:lj}{NewLine}{Exception}{NewLine}";
+const string RootPath = "/";
+const string HealthPath = "/health";
+const int ApiMajorVersion = 1;
+const int ApiMinorVersion = 0;
+
+
+// ===================================
 // Builder
 // ===================================
 
@@ -22,7 +34,7 @@ builder.Configuration.AddUserSecrets<Program>();
 // Logging
 // ===================================
 
-var forceConsoleColors = builder.Configuration.GetValue<bool>("Console:ForceColors");
+var forceConsoleColors = builder.Configuration.GetValue<bool>(ForceConsoleColorsKey);
 var consoleTheme = forceConsoleColors ? RenderConsoleTheme.Theme : LocalConsoleTheme.Theme;
 
 builder.Services.AddSerilog(logger => logger
@@ -30,7 +42,7 @@ builder.Services.AddSerilog(logger => logger
     .Enrich.FromLogContext()
     .WriteTo.Console(
         theme: consoleTheme,
-        outputTemplate: "[{Timestamp:HH:mm:ss}] [{Level:u4}] {SourceContext}{NewLine}----------------- {Message:lj}{NewLine}{Exception}{NewLine}",
+        outputTemplate: ConsoleOutputTemplate,
         applyThemeToRedirectedOutput: forceConsoleColors)
     );
 
@@ -52,7 +64,7 @@ builder.Services.AddHealthChecks();
 builder.Services
     .AddApiVersioning(options =>
     {
-        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.DefaultApiVersion = new ApiVersion(ApiMajorVersion, ApiMinorVersion);
         options.ReportApiVersions = true;
         options.ApiVersionReader = new UrlSegmentApiVersionReader();
     })
@@ -98,12 +110,9 @@ app.UseSerilogRequestLogging(options =>
     {
         var statusCode = httpContext.Response.StatusCode;
         var path = httpContext.Request.Path;
-        var isHealthCheck = path == "/" || path.StartsWithSegments("/health");
+        var isHealthCheck = path == RootPath || path.StartsWithSegments(HealthPath);
 
-        if (isHealthCheck && statusCode < 400)
-        {
-            return LogEventLevel.Verbose;
-        }
+        if (isHealthCheck && statusCode < 400) return LogEventLevel.Verbose;
 
         return statusCode switch
         {
@@ -115,7 +124,7 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 app.UseExceptionHandler();
-app.MapHealthChecks("/");
-app.MapHealthChecks("/health");
+app.MapHealthChecks(RootPath);
+app.MapHealthChecks(HealthPath);
 app.MapControllers();
 app.Run();

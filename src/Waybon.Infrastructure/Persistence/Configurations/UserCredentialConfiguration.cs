@@ -6,20 +6,31 @@ namespace Waybon.Infrastructure.Persistence.Configurations;
 
 public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserCredential>
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string TableName = "user_credential";
+
+
+    // ===================================
+    // Configure
+    // ===================================
+
     public void Configure(EntityTypeBuilder<UserCredential> builder)
     {
         // ===================================
         // Table
         // ===================================
 
-        builder.ToTable("user_credential");
+        builder.ToTable(TableName);
 
 
         // ===================================
         // Id
         // ===================================
 
-        builder.HasKey(uc => uc.Id);
+        builder.HasKey(credential => credential.Id);
 
 
         // ===================================
@@ -28,13 +39,13 @@ public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserC
 
         builder.HasIndex
         (
-            uc => uc.UserId
+            credential => credential.UserId
         )
         .IsUnique();
 
         builder.HasOne<User>()
         .WithOne()
-        .HasForeignKey<UserCredential>(uc => uc.UserId)
+        .HasForeignKey<UserCredential>(credential => credential.UserId)
         .OnDelete(DeleteBehavior.Cascade);
 
 
@@ -44,7 +55,7 @@ public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserC
 
         builder.Property
         (
-            uc => uc.PasswordHash
+            credential => credential.PasswordHash
         )
         .IsRequired()
         .HasMaxLength(UserCredential.PasswordHashMaxLength);
@@ -56,7 +67,7 @@ public sealed class UserCredentialConfiguration : IEntityTypeConfiguration<UserC
 
         builder.Property
         (
-            uc => uc.FailedLoginAttempts
+            credential => credential.FailedLoginAttempts
         )
         .HasDefaultValue(0);
     }

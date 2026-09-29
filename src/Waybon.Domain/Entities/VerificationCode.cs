@@ -18,6 +18,10 @@ public sealed class VerificationCode
     public static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(1);
     public static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(15);
 
+    private const string UserIdRequiredMessage = "User ID is required.";
+    private const string InvalidPurposeMessage = "Verification purpose is not valid.";
+    private static readonly string InvalidHashMessage = $"Hash must be exactly {HashLength} characters long.";
+
 
     // ===================================
     // Constructors
@@ -62,40 +66,19 @@ public sealed class VerificationCode
 
     private static Guid ValidateUserId(Guid userId)
     {
-        if (userId == Guid.Empty)
-        {
-            throw new DomainValidationException
-            (
-                "User ID is required."
-            );
-        }
-
+        if (userId == Guid.Empty) throw new DomainValidationException(UserIdRequiredMessage);
         return userId;
     }
 
     private static VerificationPurpose ValidatePurpose(VerificationPurpose purpose)
     {
-        if (!Enum.IsDefined(purpose))
-        {
-            throw new DomainValidationException
-            (
-                "Verification purpose is not valid."
-            );
-        }
-
+        if (!Enum.IsDefined(purpose)) throw new DomainValidationException(InvalidPurposeMessage);
         return purpose;
     }
 
     private static string ValidateHash(string hash)
     {
-        if (string.IsNullOrWhiteSpace(hash) || hash.Length != HashLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Hash must be exactly {HashLength} characters long."
-            );
-        }
-
+        if (string.IsNullOrWhiteSpace(hash) || hash.Length != HashLength) throw new DomainValidationException(InvalidHashMessage);
         return hash;
     }
 
@@ -104,10 +87,7 @@ public sealed class VerificationCode
     // Token
     // ===================================
 
-    public bool IsTokenExpired()
-    {
-        return DateTimeOffset.UtcNow >= TokenExpiresAt;
-    }
+    public bool IsTokenExpired() => DateTimeOffset.UtcNow >= TokenExpiresAt;
 
 
     // ===================================
@@ -122,18 +102,10 @@ public sealed class VerificationCode
         CodeExpiresAt = now.Add(CodeLifetime);
         FailedAttempts = 0;
 
-        if (TokenExpiresAt < CodeExpiresAt)
-        {
-            TokenExpiresAt = CodeExpiresAt.Value;
-        }
+        if (TokenExpiresAt < CodeExpiresAt) TokenExpiresAt = CodeExpiresAt.Value;
     }
 
-    public bool CanAttemptCode()
-    {
-        return CodeHash is not null
-            && CodeExpiresAt > DateTimeOffset.UtcNow
-            && FailedAttempts < MaxFailedAttempts;
-    }
+    public bool CanAttemptCode() => CodeHash is not null && CodeExpiresAt > DateTimeOffset.UtcNow && FailedAttempts < MaxFailedAttempts;
 
     public bool MatchesCode(string codeHash)
     {
@@ -144,10 +116,5 @@ public sealed class VerificationCode
             Encoding.ASCII.GetBytes(CodeHash),
             Encoding.ASCII.GetBytes(codeHash)
         );
-    }
-
-    public void RegisterFailedAttempt()
-    {
-        FailedAttempts++;
     }
 }

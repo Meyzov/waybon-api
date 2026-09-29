@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Waybon.Application.Common.Exceptions;
 using Waybon.Application.Roles.Abstractions;
 using Waybon.Application.Roles.Dtos;
@@ -11,6 +10,17 @@ namespace Waybon.Infrastructure.Roles;
 
 public sealed class RoleService(AppDbContext context) : IRoleService
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string RoleExistsMessage = "The role already exists.";
+    private const string DefaultRoleDeleteMessage = "The default role cannot be deleted. Set another role as default first.";
+    private const string RoleInUseMessage = "The role cannot be deleted because it is assigned to one or more users.";
+    private const string DefaultRoleConflictMessage = "The default role was changed by another request. Try again.";
+    private const string DefaultRoleIndexName = "ix_role_is_default";
+
+
     // ===================================
     // Mapping
     // ===================================
@@ -85,10 +95,10 @@ public sealed class RoleService(AppDbContext context) : IRoleService
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             context.ChangeTracker.Clear();
-            throw new ConflictException("The role already exists.");
+            throw new ConflictException(RoleExistsMessage);
         }
 
         return ToResponse(newRole);
@@ -110,10 +120,10 @@ public sealed class RoleService(AppDbContext context) : IRoleService
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             context.ChangeTracker.Clear();
-            throw new ConflictException("The role already exists.");
+            throw new ConflictException(RoleExistsMessage);
         }
 
         return ToResponse(role);
@@ -128,11 +138,7 @@ public sealed class RoleService(AppDbContext context) : IRoleService
     {
         var role = await context.Roles.FindAsync([id], cancellationToken);
         if (role is null) return false;
-
-        if (role.IsDefault)
-        {
-            throw new ConflictException("The default role cannot be deleted. Set another role as default first.");
-        }
+        if (role.IsDefault) throw new ConflictException(DefaultRoleDeleteMessage);
 
         context.Roles.Remove(role);
 
@@ -140,13 +146,10 @@ public sealed class RoleService(AppDbContext context) : IRoleService
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (IsForeignKeyViolation(ex))
+        catch (DbUpdateException ex) when (ex.IsForeignKeyViolation())
         {
             context.ChangeTracker.Clear();
-            throw new ConflictException
-            (
-                "The role cannot be deleted because it is assigned to one or more users."
-            );
+            throw new ConflictException(RoleInUseMessage);
         }
 
         return true;
@@ -188,7 +191,11 @@ public sealed class RoleService(AppDbContext context) : IRoleService
                 {
                     await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
-                    var currentDefault = await context.Roles.FirstOrDefaultAsync(r => r.IsDefault, cancellationToken);
+                    // ===================================
+                    // Begin Transaction
+                    // ===================================
+
+                    var currentDefault = await context.Roles.FirstOrDefaultAsync(existing => existing.IsDefault, cancellationToken);
                     if (currentDefault is not null)
                     {
                         currentDefault.UnmarkAsDefault();
@@ -198,46 +205,20 @@ public sealed class RoleService(AppDbContext context) : IRoleService
                     role.MarkAsDefault();
                     await context.SaveChangesAsync(cancellationToken);
 
+                    // ===================================
+                    // End Transaction
+                    // ===================================
+
                     await transaction.CommitAsync(cancellationToken);
                 }
 
                 return ToResponse(role);
             });
         }
-        catch (DbUpdateException ex) when (IsDefaultRoleViolation(ex))
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation(DefaultRoleIndexName))
         {
             context.ChangeTracker.Clear();
-            throw new ConflictException("The default role was changed by another request. Try again.");
+            throw new ConflictException(DefaultRoleConflictMessage);
         }
-    }
-
-
-    // ===================================
-    // Helpers
-    // ===================================
-
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-    {
-        return ex.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation
-        };
-    }
-
-    private static bool IsForeignKeyViolation(DbUpdateException ex)
-    {
-        return ex.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.ForeignKeyViolation
-        };
-    }
-
-    private static bool IsDefaultRoleViolation(DbUpdateException ex)
-    {
-        return ex.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: "ix_role_is_default"
-        };
     }
 }

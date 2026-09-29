@@ -15,18 +15,12 @@ public sealed class BCryptPasswordHasher : IPasswordHasher
     // HashPassword
     // ===================================
 
-    public string HashPassword(string password)
-    {
-        return BCrypt.Net.BCrypt.EnhancedHashPassword(password, workFactor: WorkFactor);
-    }
+    public string HashPassword(string password) => BCrypt.Net.BCrypt.EnhancedHashPassword(password, workFactor: WorkFactor);
 
 
     // ===================================
     // VerifyPassword
     // ===================================
 
-    public bool VerifyPassword(string password, string hash)
-    {
-        return BCrypt.Net.BCrypt.EnhancedVerify(password, hash);
-    }
+    public bool VerifyPassword(string password, string hash) => BCrypt.Net.BCrypt.EnhancedVerify(password, hash);
 }

@@ -12,6 +12,7 @@ public sealed class EmailQueue(ILogger<EmailQueue> logger) : IEmailQueue
     // ===================================
 
     private const int Capacity = 500;
+    private const string QueueFullLogMessage = "The email queue is full. An email was dropped.";
 
 
     // ===================================
@@ -33,9 +34,6 @@ public sealed class EmailQueue(ILogger<EmailQueue> logger) : IEmailQueue
 
     public void Enqueue(EmailMessage message)
     {
-        if (!channel.Writer.TryWrite(message))
-        {
-            logger.LogWarning("The email queue is full. An email was dropped.");
-        }
+        if (!channel.Writer.TryWrite(message)) logger.LogWarning(QueueFullLogMessage);
     }
 }

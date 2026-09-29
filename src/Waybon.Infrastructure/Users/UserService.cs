@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Waybon.Application.Common.Exceptions;
 using Waybon.Application.Users.Abstractions;
 using Waybon.Application.Users.Dtos;
@@ -11,6 +10,13 @@ namespace Waybon.Infrastructure.Users;
 
 public sealed class UserService(AppDbContext context) : IUserService
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string EmailTakenMessage = "A user with that email already exists.";
+
+
     // ===================================
     // Mapping
     // ===================================
@@ -67,24 +73,17 @@ public sealed class UserService(AppDbContext context) : IUserService
         var user = await context.Users.FindAsync([id], cancellationToken);
         if (user is null) return null;
 
-        if (request.Username is not null)
-        {
-            user.UpdateUsername(request.Username);
-        }
-
-        if (request.Email is not null)
-        {
-            user.UpdateEmail(request.Email);
-        }
+        if (request.Username is not null) user.UpdateUsername(request.Username);
+        if (request.Email is not null) user.UpdateEmail(request.Email);
 
         try
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             context.ChangeTracker.Clear();
-            throw new ConflictException("A user with that email already exists.");
+            throw new ConflictException(EmailTakenMessage);
         }
 
         return ToResponse(user);
@@ -104,18 +103,5 @@ public sealed class UserService(AppDbContext context) : IUserService
         await context.SaveChangesAsync(cancellationToken);
 
         return true;
-    }
-
-
-    // ===================================
-    // Helpers
-    // ===================================
-
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-    {
-        return ex.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation
-        };
     }
 }

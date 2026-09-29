@@ -53,7 +53,7 @@ public static class VerificationCodeEmail
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;font-family:Arial,Helvetica,sans-serif;">
                       <tr>
                         <td style="background-color:#e4ecd0;border-radius:16px 16px 0 0;padding:24px 32px;text-align:center;">
-                          <div style="font-size:20px;line-height:28px;font-weight:bold;color:#3d4a23;">Waybon</div>
+                          <div style="font-size:28px;line-height:36px;font-weight:bold;color:#3d4a23;">Waybon</div>
                         </td>
                       </tr>
                       <tr>
@@ -67,7 +67,7 @@ public static class VerificationCodeEmail
                         </td>
                       </tr>
                       <tr>
-                        <td style="background-color:#f3f6ea;border-radius:0 0 16px 16px;padding:24px 32px;text-align:center;">
+                        <td style="background-color:#e4ecd0;border-radius:0 0 16px 16px;padding:24px 32px;text-align:center;">
                           <p style="margin:0;font-size:12px;line-height:20px;color:#7a8069;">If you didn't create a Waybon account, you can ignore this email.</p>
                           <p style="margin:8px 0 0 0;font-size:12px;line-height:20px;color:#7a8069;">This is an automated message, please do not reply.</p>
                         </td>

@@ -6,13 +6,24 @@ namespace Waybon.Infrastructure.Persistence.Configurations;
 
 public sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string TableName = "session";
+
+
+    // ===================================
+    // Configure
+    // ===================================
+
     public void Configure(EntityTypeBuilder<Session> builder)
     {
         // ===================================
         // Table
         // ===================================
 
-        builder.ToTable("session");
+        builder.ToTable(TableName);
 
 
         // ===================================

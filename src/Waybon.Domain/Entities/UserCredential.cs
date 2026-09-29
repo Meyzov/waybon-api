@@ -8,9 +8,15 @@ public sealed class UserCredential
     // Constants
     // ===================================
 
+    public const int PasswordMinLength = 8;
+    public const int PasswordMaxLength = 128;
     public const int PasswordHashMaxLength = 128;
     public const int MaxFailedLoginAttempts = 5;
     public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
+    private const string UserIdRequiredMessage = "User ID is required.";
+    private const string PasswordHashRequiredMessage = "Password hash is required.";
+    private static readonly string PasswordHashTooLongMessage = $"Password hash cannot exceed {PasswordHashMaxLength} characters.";
 
 
     // ===================================
@@ -56,34 +62,14 @@ public sealed class UserCredential
 
     private static Guid ValidateUserId(Guid userId)
     {
-        if (userId == Guid.Empty)
-        {
-            throw new DomainValidationException
-            (
-                "User ID is required."
-            );
-        }
-
+        if (userId == Guid.Empty) throw new DomainValidationException(UserIdRequiredMessage);
         return userId;
     }
 
     private static string ValidatePasswordHash(string passwordHash)
     {
-        if (string.IsNullOrWhiteSpace(passwordHash))
-        {
-            throw new DomainValidationException
-            (
-                "Password hash is required."
-            );
-        }
-
-        if (passwordHash.Length > PasswordHashMaxLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Password hash cannot exceed {PasswordHashMaxLength} characters."
-            );
-        }
+        if (string.IsNullOrWhiteSpace(passwordHash)) throw new DomainValidationException(PasswordHashRequiredMessage);
+        if (passwordHash.Length > PasswordHashMaxLength) throw new DomainValidationException(PasswordHashTooLongMessage);
 
         return passwordHash;
     }
@@ -93,55 +79,7 @@ public sealed class UserCredential
     // Login attempts
     // ===================================
 
-    public bool IsLocked()
-    {
-        return LockedUntil > DateTimeOffset.UtcNow;
-    }
-
-    public void RegisterFailedLogin()
-    {
-        var now = DateTimeOffset.UtcNow;
-
-        if (LockedUntil.HasValue)
-        {
-            if (now >= LockedUntil.Value)
-            {
-                FailedLoginAttempts = 0;
-                LockedUntil = null;
-            }
-            else
-            {
-                throw new AccountLockedException
-                (
-                    "Account is currently locked."
-                );
-            }
-        }
-
-        FailedLoginAttempts++;
-
-        if (FailedLoginAttempts >= MaxFailedLoginAttempts)
-        {
-            LockedUntil = now.Add(LockoutDuration);
-        }
-
-        UpdatedAt = now;
-    }
-
-    public void RegisterSuccessfulLogin()
-    {
-        if (IsLocked())
-        {
-            throw new AccountLockedException
-            (
-                "Account is currently locked."
-            );
-        }
-
-        FailedLoginAttempts = 0;
-        LockedUntil = null;
-        UpdatedAt = DateTimeOffset.UtcNow;
-    }
+    public bool IsLocked() => LockedUntil > DateTimeOffset.UtcNow;
 
 
     // ===================================

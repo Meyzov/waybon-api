@@ -10,5 +10,6 @@ public sealed class UpdateUserRequest
     public string? Username { get; set; }
 
     [EmailAddress]
+    [MaxLength(User.EmailMaxLength)]
     public string? Email { get; set; }
 }

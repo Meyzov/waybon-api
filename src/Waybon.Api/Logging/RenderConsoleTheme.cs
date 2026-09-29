@@ -23,7 +23,7 @@ public static class RenderConsoleTheme
     private const string Blue = "\u001b[34m";
     private const string Magenta = "\u001b[35m";
     private const string Cyan = "\u001b[36m";
-    private const string FatalBadge = "\u001b[37;41m"; // white on red
+    private const string FatalBadge = "\u001b[37;41m";
 
 
     // ===================================

@@ -18,13 +18,31 @@ namespace Waybon.Infrastructure;
 
 public static class DependencyInjection
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string ConnectionStringName = "DefaultConnection";
+    private const int DatabaseMaxRetryCount = 3;
+    private static readonly TimeSpan DatabaseMaxRetryDelay = TimeSpan.FromSeconds(5);
+    private const string MissingConnectionStringMessage = $"The '{ConnectionStringName}' connection string is not configured.";
+    private const string MissingBrevoSettingsMessage = $"The '{BrevoOptions.SectionName}' settings (ApiKey, SenderEmail, SenderName) are not fully configured.";
+    private const string BrevoBaseAddress = "https://api.brevo.com/v3/";
+    private const string BrevoApiKeyHeader = "api-key";
+    private static readonly TimeSpan BrevoTimeout = TimeSpan.FromSeconds(10);
+
+
+    // ===================================
+    // AddInfrastructure
+    // ===================================
+
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         // ===================================
         // Connection string
         // ===================================
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("The 'DefaultConnection' connection string is not configured.");
+        var connectionString = configuration.GetConnectionString(ConnectionStringName) ?? throw new InvalidOperationException(MissingConnectionStringMessage);
         services.AddDbContextPool<AppDbContext>
         (
             options => options
@@ -33,8 +51,8 @@ public static class DependencyInjection
                     connectionString,
                     npgsql => npgsql.EnableRetryOnFailure
                     (
-                        maxRetryCount: 3,
-                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        maxRetryCount: DatabaseMaxRetryCount,
+                        maxRetryDelay: DatabaseMaxRetryDelay,
                         errorCodesToAdd: null
                     )
                 )
@@ -62,10 +80,8 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(BrevoOptions.SectionName))
             .Validate
             (
-                brevo => !string.IsNullOrWhiteSpace(brevo.ApiKey)
-                    && !string.IsNullOrWhiteSpace(brevo.SenderEmail)
-                    && !string.IsNullOrWhiteSpace(brevo.SenderName),
-                "The 'Brevo' settings (ApiKey, SenderEmail, SenderName) are not fully configured."
+                brevo => !string.IsNullOrWhiteSpace(brevo.ApiKey) && !string.IsNullOrWhiteSpace(brevo.SenderEmail) && !string.IsNullOrWhiteSpace(brevo.SenderName),
+                MissingBrevoSettingsMessage
             )
             .ValidateOnStart();
 
@@ -73,9 +89,9 @@ public static class DependencyInjection
         {
             var brevo = serviceProvider.GetRequiredService<IOptions<BrevoOptions>>().Value;
 
-            client.BaseAddress = new Uri("https://api.brevo.com/v3/");
-            client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.Add("api-key", brevo.ApiKey);
+            client.BaseAddress = new Uri(BrevoBaseAddress);
+            client.Timeout = BrevoTimeout;
+            client.DefaultRequestHeaders.Add(BrevoApiKeyHeader, brevo.ApiKey);
         });
 
         services.AddMemoryCache();

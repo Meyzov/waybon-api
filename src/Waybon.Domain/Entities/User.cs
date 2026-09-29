@@ -13,6 +13,15 @@ public sealed class User
     public const int UsernameMaxLength = 20;
     public const int EmailMaxLength = 255;
 
+    private const string UsernameRequiredMessage = "Username is required.";
+    private static readonly string UsernameTooShortMessage = $"Username must be at least {UsernameMinLength} characters long.";
+    private static readonly string UsernameTooLongMessage = $"Username cannot exceed {UsernameMaxLength} characters.";
+    private const string UsernameInvalidCharactersMessage = "Username can only contain letters, numbers, dots, hyphens and underscores.";
+    private const string EmailRequiredMessage = "Email is required.";
+    private static readonly string EmailTooLongMessage = $"Email cannot exceed {EmailMaxLength} characters.";
+    private const string InvalidEmailMessage = "Invalid email format.";
+    private const string RoleIdRequiredMessage = "Role ID cannot be empty.";
+
 
     // ===================================
     // Constructors
@@ -64,47 +73,18 @@ public sealed class User
 
     private static string NormalizeUsername(string username)
     {
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            throw new DomainValidationException
-            (
-                "Username is required."
-            );
-        }
+        if (string.IsNullOrWhiteSpace(username)) throw new DomainValidationException(UsernameRequiredMessage);
 
         var normalizedUsername = username.Trim();
 
-        if (normalizedUsername.Length < UsernameMinLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Username must be at least {UsernameMinLength} characters long."
-            );
-        }
-
-        if (normalizedUsername.Length > UsernameMaxLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Username cannot exceed {UsernameMaxLength} characters."
-            );
-        }
-
-        if (!normalizedUsername.All(IsAllowedUsernameCharacter))
-        {
-            throw new DomainValidationException
-            (
-                "Username can only contain letters, numbers, dots, hyphens and underscores."
-            );
-        }
+        if (normalizedUsername.Length < UsernameMinLength) throw new DomainValidationException(UsernameTooShortMessage);
+        if (normalizedUsername.Length > UsernameMaxLength) throw new DomainValidationException(UsernameTooLongMessage);
+        if (!normalizedUsername.All(IsAllowedUsernameCharacter)) throw new DomainValidationException(UsernameInvalidCharactersMessage);
 
         return normalizedUsername;
     }
 
-    private static bool IsAllowedUsernameCharacter(char character)
-    {
-        return char.IsAsciiLetterOrDigit(character) || character is '.' or '-' or '_';
-    }
+    private static bool IsAllowedUsernameCharacter(char character) => char.IsAsciiLetterOrDigit(character) || character is '.' or '-' or '_';
 
 
     // ===================================
@@ -123,44 +103,21 @@ public sealed class User
 
     public static string NormalizeEmail(string email)
     {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            throw new DomainValidationException
-            (
-                "Email is required."
-            );
-        }
+        if (string.IsNullOrWhiteSpace(email)) throw new DomainValidationException(EmailRequiredMessage);
 
         var normalizedEmail = email.Trim();
-
-        if (normalizedEmail.Length > EmailMaxLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Email cannot exceed {EmailMaxLength} characters."
-            );
-        }
+        if (normalizedEmail.Length > EmailMaxLength) throw new DomainValidationException(EmailTooLongMessage);
 
         try
         {
             var mailAddress = new MailAddress(normalizedEmail);
 
-            if (mailAddress.Address != normalizedEmail)
-            {
-                throw new DomainValidationException
-                (
-                    "Invalid email format."
-                );
-            }
-
+            if (mailAddress.Address != normalizedEmail) throw new DomainValidationException(InvalidEmailMessage);
             return normalizedEmail.ToLowerInvariant();
         }
         catch (FormatException)
         {
-            throw new DomainValidationException
-            (
-                "Invalid email format."
-            );
+            throw new DomainValidationException(InvalidEmailMessage);
         }
     }
 
@@ -188,14 +145,7 @@ public sealed class User
 
     private static Guid ValidateRoleId(Guid roleId)
     {
-        if (roleId == Guid.Empty)
-        {
-            throw new DomainValidationException
-            (
-                "Role ID cannot be empty."
-            );
-        }
-
+        if (roleId == Guid.Empty) throw new DomainValidationException(RoleIdRequiredMessage);
         return roleId;
     }
 

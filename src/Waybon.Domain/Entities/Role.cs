@@ -11,6 +11,10 @@ public sealed class Role
     public const int NameMinLength = 3;
     public const int NameMaxLength = 15;
 
+    private const string NameRequiredMessage = "Role name is required.";
+    private static readonly string NameTooShortMessage = $"Role name must be at least {NameMinLength} characters long.";
+    private static readonly string NameTooLongMessage = $"Role name cannot exceed {NameMaxLength} characters.";
+
 
     // ===================================
     // Constructors
@@ -58,31 +62,12 @@ public sealed class Role
 
     private static string NormalizeName(string name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new DomainValidationException
-            (
-                "Role name is required."
-            );
-        }
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainValidationException(NameRequiredMessage);
 
         var normalizedName = name.Trim();
 
-        if (normalizedName.Length < NameMinLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Role name must be at least {NameMinLength} characters long."
-            );
-        }
-
-        if (normalizedName.Length > NameMaxLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Role name cannot exceed {NameMaxLength} characters."
-            );
-        }
+        if (normalizedName.Length < NameMinLength) throw new DomainValidationException(NameTooShortMessage);
+        if (normalizedName.Length > NameMaxLength) throw new DomainValidationException(NameTooLongMessage);
 
         return normalizedName.ToLowerInvariant();
     }

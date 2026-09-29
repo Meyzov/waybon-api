@@ -7,16 +7,28 @@ namespace Waybon.Infrastructure.Persistence.Configurations;
 
 public sealed class VerificationCodeConfiguration : IEntityTypeConfiguration<VerificationCode>
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string TableName = "verification_code";
+    private const string PurposeCheckConstraintName = "ck_verification_code_purpose";
+
+
+    // ===================================
+    // Configure
+    // ===================================
+
     public void Configure(EntityTypeBuilder<VerificationCode> builder)
     {
         // ===================================
         // Table
         // ===================================
 
-        builder.ToTable("verification_code", table =>
+        builder.ToTable(TableName, table =>
         {
             var purposes = string.Join(", ", Enum.GetNames<VerificationPurpose>().Select(name => $"'{name}'"));
-            table.HasCheckConstraint("ck_verification_code_purpose", $"purpose IN ({purposes})");
+            table.HasCheckConstraint(PurposeCheckConstraintName, $"purpose IN ({purposes})");
         });
 
 

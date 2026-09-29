@@ -6,6 +6,17 @@ using Waybon.Application.Roles.Dtos;
 using Waybon.Infrastructure;
 
 // ===================================
+// Constants
+// ===================================
+
+const string AdminRoleName = "admin";
+const string UserRoleName = "user";
+const string RoleExistsMessage = "Role '{0}' already exists, skipping.";
+const string RoleCreatedMessage = "Role '{0}' created on {1:yyyy-MM-dd HH:mm:ss} UTC.";
+const string DefaultRoleSetMessage = "Role '{0}' set as the default role.";
+
+
+// ===================================
 // Host
 // ===================================
 
@@ -19,23 +30,24 @@ builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 using var host = builder.Build();
-var roleService = host.Services.GetRequiredService<IRoleService>();
+using var scope = host.Services.CreateScope();
+var roleService = scope.ServiceProvider.GetRequiredService<IRoleService>();
 
 
 // ===================================
 // Base roles
 // ===================================
 
-foreach (var name in new[] { "admin", "user" })
+foreach (var name in new[] { AdminRoleName, UserRoleName })
 {
     if (await roleService.GetByNameAsync(name) is not null)
     {
-        Console.WriteLine($"Rol '{name}' ya existe, se omite.");
+        Console.WriteLine(RoleExistsMessage, name);
         continue;
     }
 
     var role = await roleService.CreateAsync(new CreateRoleRequest { Name = name });
-    Console.WriteLine($"Rol '{role.Name}' creado el {role.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC.");
+    Console.WriteLine(RoleCreatedMessage, role.Name, role.CreatedAt);
 }
 
 
@@ -45,10 +57,10 @@ foreach (var name in new[] { "admin", "user" })
 
 if (await roleService.GetDefaultAsync() is null)
 {
-    var userRole = await roleService.GetByNameAsync("user");
+    var userRole = await roleService.GetByNameAsync(UserRoleName);
     if (userRole is not null)
     {
         await roleService.SetDefaultAsync(userRole.Id);
-        Console.WriteLine($"Rol '{userRole.Name}' marcado como rol por defecto.");
+        Console.WriteLine(DefaultRoleSetMessage, userRole.Name);
     }
 }

@@ -11,6 +11,13 @@ namespace Waybon.Api.Controllers;
 public sealed class UsersController(IUserService userService) : ControllerBase
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    private const string UserNotFoundMessage = "User not found.";
+
+
+    // ===================================
     // GET: api/v1/users
     // ===================================
 
@@ -30,11 +37,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var user = await userService.GetByIdAsync(id, cancellationToken);
-        if (user is null) return Problem
-        (
-            statusCode: StatusCodes.Status404NotFound,
-            detail: "User not found."
-        );
+        if (user is null) return Problem(statusCode: StatusCodes.Status404NotFound, detail: UserNotFoundMessage);
 
         return Ok(user);
     }
@@ -48,11 +51,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> Update(Guid id, UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var user = await userService.UpdateAsync(id, request, cancellationToken);
-        if (user is null) return Problem
-        (
-            statusCode: StatusCodes.Status404NotFound,
-            detail: "User not found."
-        );
+        if (user is null) return Problem(statusCode: StatusCodes.Status404NotFound, detail: UserNotFoundMessage);
 
         return Ok(user);
     }
@@ -66,11 +65,7 @@ public sealed class UsersController(IUserService userService) : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await userService.DeleteAsync(id, cancellationToken);
-        if (!deleted) return Problem
-        (
-            statusCode: StatusCodes.Status404NotFound,
-            detail: "User not found."
-        );
+        if (!deleted) return Problem(statusCode: StatusCodes.Status404NotFound, detail: UserNotFoundMessage);
 
         return NoContent();
     }

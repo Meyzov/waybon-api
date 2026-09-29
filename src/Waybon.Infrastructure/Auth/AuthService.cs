@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Waybon.Application.Auth;
 using Waybon.Application.Auth.Abstractions;
 using Waybon.Application.Auth.Dtos;
@@ -30,6 +29,7 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
     private const string InvalidVerificationTokenMessage = "Invalid or expired verification token.";
     private const string InvalidCodeMessage = "Invalid or expired code.";
     private const string CodeRequestTooSoonMessage = "Please wait before requesting another code.";
+    private const string NoDefaultRoleMessage = "No default role is configured.";
     private const string VerificationTokenKey = "verificationToken";
 
     private static string? dummyPasswordHash;
@@ -41,8 +41,17 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
 
     public async Task<AuthUserResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        var defaultRole = await roleService.GetDefaultAsync(cancellationToken) ?? throw new InvalidOperationException("No default role is configured.");
+        // ===================================
+        // Build user
+        // ===================================
+
+        var defaultRole = await roleService.GetDefaultAsync(cancellationToken) ?? throw new InvalidOperationException(NoDefaultRoleMessage);
         var newUser = new User(request.Username, request.Email, defaultRole.Id);
+
+
+        // ===================================
+        // Check existing account
+        // ===================================
 
         var existingUser = await context.Users
             .AsNoTracking()
@@ -50,10 +59,12 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
             .Select(user => new { user.Id, user.EmailVerified })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (existingUser is { EmailVerified: true })
-        {
-            throw new ConflictException(EmailTakenMessage);
-        }
+        if (existingUser is { EmailVerified: true }) throw new ConflictException(EmailTakenMessage);
+
+
+        // ===================================
+        // Save account
+        // ===================================
 
         var passwordHash = passwordHasher.HashPassword(request.Password);
         var strategy = context.Database.CreateExecutionStrategy();
@@ -64,6 +75,10 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
             {
                 context.ChangeTracker.Clear();
                 await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+
+                // ===================================
+                // Begin Transaction
+                // ===================================
 
                 if (existingUser is not null)
                 {
@@ -76,10 +91,14 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
                 context.UserCredentials.Add(new UserCredential(newUser.Id, passwordHash));
                 await context.SaveChangesAsync(cancellationToken);
 
+                // ===================================
+                // End Transaction
+                // ===================================
+
                 await transaction.CommitAsync(cancellationToken);
             });
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             context.ChangeTracker.Clear();
             throw new ConflictException(EmailTakenMessage);
@@ -95,6 +114,10 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
+        // ===================================
+        // Find account
+        // ===================================
+
         var email = User.NormalizeEmail(request.Email);
 
         var account = await context.Users
@@ -117,26 +140,52 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
         var user = account.User;
         var credential = account.Credential;
 
-        if (credential.IsLocked())
-        {
-            throw new AccountLockedException(AccountLockedMessage);
-        }
 
-        if (!passwordHasher.VerifyPassword(request.Password, credential.PasswordHash))
-        {
-            credential.RegisterFailedLogin();
-            await context.SaveChangesAsync(cancellationToken);
+        // ===================================
+        // Check password
+        // ===================================
 
-            throw new UnauthorizedException(InvalidCredentialsMessage);
-        }
+        if (credential.IsLocked()) throw new AccountLockedException(AccountLockedMessage);
 
-        credential.RegisterSuccessfulLogin();
+        var now = DateTimeOffset.UtcNow;
+        DateTimeOffset? lockedUntil = now.Add(UserCredential.LockoutDuration);
 
-        if (!user.IsActive)
-        {
-            await context.SaveChangesAsync(cancellationToken);
-            throw new ForbiddenException(AuthErrorCodes.AccountDisabled, AccountDisabledMessage);
-        }
+        var reserved = await context.UserCredentials
+            .Where(existing => existing.Id == credential.Id && (existing.LockedUntil == null || existing.LockedUntil <= now))
+            .ExecuteUpdateAsync
+            (
+                setters => setters
+                    .SetProperty(existing => existing.FailedLoginAttempts, existing => (existing.LockedUntil == null ? existing.FailedLoginAttempts : 0) + 1)
+                    .SetProperty(existing => existing.LockedUntil, existing => (existing.LockedUntil == null ? existing.FailedLoginAttempts : 0) + 1 >= UserCredential.MaxFailedLoginAttempts ? lockedUntil : null)
+                    .SetProperty(existing => existing.UpdatedAt, now),
+                cancellationToken
+            );
+
+        if (reserved == 0) throw new AccountLockedException(AccountLockedMessage);
+        if (!passwordHasher.VerifyPassword(request.Password, credential.PasswordHash)) throw new UnauthorizedException(InvalidCredentialsMessage);
+
+        await context.UserCredentials
+            .Where(existing => existing.Id == credential.Id)
+            .ExecuteUpdateAsync
+            (
+                setters => setters
+                    .SetProperty(existing => existing.FailedLoginAttempts, 0)
+                    .SetProperty(existing => existing.LockedUntil, (DateTimeOffset?)null)
+                    .SetProperty(existing => existing.UpdatedAt, now),
+                cancellationToken
+            );
+
+
+        // ===================================
+        // Check account status
+        // ===================================
+
+        if (!user.IsActive) throw new ForbiddenException(AuthErrorCodes.AccountDisabled, AccountDisabledMessage);
+
+
+        // ===================================
+        // Require email verification
+        // ===================================
 
         if (!user.EmailVerified)
         {
@@ -150,7 +199,8 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
                     .ExecuteDeleteAsync(cancellationToken);
 
                 context.VerificationCodes.Add(verificationCode);
-            }, cancellationToken);
+            },
+            cancellationToken);
 
             throw new ForbiddenException
             (
@@ -159,6 +209,11 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
                 new Dictionary<string, object?> { [VerificationTokenKey] = verificationToken }
             );
         }
+
+
+        // ===================================
+        // Create session
+        // ===================================
 
         var token = tokenGenerator.Generate();
         var session = new Session(user.Id, tokenGenerator.Hash(token));
@@ -170,7 +225,8 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
                 .ExecuteDeleteAsync(cancellationToken);
 
             context.Sessions.Add(session);
-        }, cancellationToken);
+        },
+        cancellationToken);
 
         return new LoginResponse
         {
@@ -186,6 +242,10 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
 
     public async Task SendVerificationCodeAsync(SendVerificationCodeRequest request, CancellationToken cancellationToken = default)
     {
+        // ===================================
+        // Find verification
+        // ===================================
+
         var tokenHash = tokenGenerator.Hash(request.VerificationToken);
 
         var pending = await context.VerificationCodes
@@ -199,15 +259,19 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
             )
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (pending is null || pending.EmailVerified || pending.Verification.IsTokenExpired())
-        {
-            throw new BadRequestException(InvalidVerificationTokenMessage);
-        }
+        if (pending is null || pending.EmailVerified || pending.Verification.IsTokenExpired()) throw new BadRequestException(InvalidVerificationTokenMessage);
 
-        if (!emailSendLimiter.TryAcquire(pending.Email, out var retryAfter))
-        {
-            throw new TooManyRequestsException(CodeRequestTooSoonMessage, retryAfter);
-        }
+
+        // ===================================
+        // Check send limit
+        // ===================================
+
+        if (!emailSendLimiter.TryAcquire(pending.Email, out var retryAfter)) throw new TooManyRequestsException(CodeRequestTooSoonMessage, retryAfter);
+
+
+        // ===================================
+        // Send code
+        // ===================================
 
         var code = tokenGenerator.GenerateNumericCode(VerificationCode.CodeLength);
         pending.Verification.SetCode(tokenGenerator.Hash(code));
@@ -223,50 +287,67 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
 
     public async Task<LoginResponse> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken cancellationToken = default)
     {
+        // ===================================
+        // Find verification
+        // ===================================
+
         var tokenHash = tokenGenerator.Hash(request.VerificationToken);
 
         var verification = await context.VerificationCodes
+            .AsNoTracking()
             .FirstOrDefaultAsync(code => code.TokenHash == tokenHash && code.Purpose == VerificationPurpose.EmailVerification, cancellationToken);
 
-        if (verification is null || verification.IsTokenExpired())
-        {
-            throw new BadRequestException(InvalidVerificationTokenMessage);
-        }
+        if (verification is null || verification.IsTokenExpired()) throw new BadRequestException(InvalidVerificationTokenMessage);
+        if (!verification.CanAttemptCode()) throw new BadRequestException(InvalidCodeMessage);
 
-        if (!verification.CanAttemptCode())
-        {
-            throw new BadRequestException(InvalidCodeMessage);
-        }
 
-        if (!verification.MatchesCode(tokenGenerator.Hash(request.Code)))
-        {
-            verification.RegisterFailedAttempt();
-            await context.SaveChangesAsync(cancellationToken);
+        // ===================================
+        // Check code
+        // ===================================
 
-            throw new BadRequestException(InvalidCodeMessage);
-        }
+        var reserved = await context.VerificationCodes
+            .Where(code => code.Id == verification.Id && code.FailedAttempts < VerificationCode.MaxFailedAttempts)
+            .ExecuteUpdateAsync
+            (
+                setters => setters.SetProperty(code => code.FailedAttempts, code => code.FailedAttempts + 1),
+                cancellationToken
+            );
+
+        if (reserved == 0 || !verification.MatchesCode(tokenGenerator.Hash(request.Code))) throw new BadRequestException(InvalidCodeMessage);
+
+
+        // ===================================
+        // Verify user
+        // ===================================
 
         var user = await context.Users.FirstAsync(user => user.Id == verification.UserId, cancellationToken);
-
-        if (!user.IsActive)
-        {
-            throw new ForbiddenException(AuthErrorCodes.AccountDisabled, AccountDisabledMessage);
-        }
+        if (!user.IsActive) throw new ForbiddenException(AuthErrorCodes.AccountDisabled, AccountDisabledMessage);
 
         user.VerifyEmail();
-        context.VerificationCodes.Remove(verification);
+
+
+        // ===================================
+        // Create session
+        // ===================================
 
         var token = tokenGenerator.Generate();
         var session = new Session(user.Id, tokenGenerator.Hash(token));
 
         await ReplaceInTransactionAsync(async () =>
         {
+            var deleted = await context.VerificationCodes
+                .Where(code => code.Id == verification.Id)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (deleted == 0) throw new BadRequestException(InvalidVerificationTokenMessage);
+
             await context.Sessions
                 .Where(existing => existing.UserId == user.Id)
                 .ExecuteDeleteAsync(cancellationToken);
 
             context.Sessions.Add(session);
-        }, cancellationToken);
+        },
+        cancellationToken);
 
         return new LoginResponse
         {
@@ -290,41 +371,30 @@ public sealed class AuthService(AppDbContext context, IRoleService roleService, 
             {
                 await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
+                // ===================================
+                // Begin Transaction
+                // ===================================
+
                 await replace();
                 await context.SaveChangesAsync(acceptAllChangesOnSuccess: false, cancellationToken);
+
+                // ===================================
+                // End Transaction
+                // ===================================
 
                 await transaction.CommitAsync(cancellationToken);
             });
 
             context.ChangeTracker.AcceptAllChanges();
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             context.ChangeTracker.Clear();
             throw new ConflictException(LoginConflictMessage);
         }
     }
 
-    private string GetDummyPasswordHash()
-    {
-        return dummyPasswordHash ??= passwordHasher.HashPassword(Guid.NewGuid().ToString());
-    }
+    private string GetDummyPasswordHash() => dummyPasswordHash ??= passwordHasher.HashPassword(Guid.NewGuid().ToString());
 
-    private static AuthUserResponse ToAuthUserResponse(User user)
-    {
-        return new AuthUserResponse
-        {
-            Id = user.Id,
-            Username = user.Username,
-            Email = user.Email
-        };
-    }
-
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-    {
-        return ex.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation
-        };
-    }
+    private static AuthUserResponse ToAuthUserResponse(User user) => new() { Id = user.Id, Username = user.Username, Email = user.Email };
 }

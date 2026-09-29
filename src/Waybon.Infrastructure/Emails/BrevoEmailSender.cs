@@ -17,6 +17,9 @@ public sealed class BrevoEmailSender(HttpClient httpClient, IOptions<BrevoOption
 
     private const string SendEmailPath = "smtp/email";
     private const string DeliveryFailedMessage = "The email could not be sent. Try again later.";
+    private const string RejectedLogMessage = "Brevo rejected the email. Status: {StatusCode}. Response: {Response}";
+    private const string UnreachableLogMessage = "Could not reach Brevo.";
+    private const string TimeoutLogMessage = "Brevo did not respond in time.";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -51,18 +54,18 @@ public sealed class BrevoEmailSender(HttpClient httpClient, IOptions<BrevoOption
             var error = await response.Content.ReadAsStringAsync(cancellationToken);
             logger.LogError
             (
-                "Brevo rejected the email. Status: {StatusCode}. Response: {Response}",
+                RejectedLogMessage,
                 (int)response.StatusCode,
                 error
             );
         }
         catch (HttpRequestException ex)
         {
-            logger.LogError(ex, "Could not reach Brevo.");
+            logger.LogError(ex, UnreachableLogMessage);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogError(ex, "Brevo did not respond in time.");
+            logger.LogError(ex, TimeoutLogMessage);
         }
 
         throw new EmailDeliveryException(DeliveryFailedMessage);

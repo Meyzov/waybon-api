@@ -12,6 +12,12 @@ public sealed class MemoryEmailSendLimiter(IMemoryCache cache) : IEmailSendLimit
     private const int MaxEmailsPerWindow = 5;
     private static readonly TimeSpan Window = TimeSpan.FromHours(24);
     private static readonly TimeSpan Cooldown = TimeSpan.FromSeconds(60);
+    private const string CacheKeyPrefix = "email-send:";
+
+
+    // ===================================
+    // Fields
+    // ===================================
 
     private readonly Lock gate = new();
 
@@ -23,7 +29,7 @@ public sealed class MemoryEmailSendLimiter(IMemoryCache cache) : IEmailSendLimit
     public bool TryAcquire(string email, out TimeSpan retryAfter)
     {
         var now = DateTimeOffset.UtcNow;
-        var key = $"email-send:{email}";
+        var key = CacheKeyPrefix + email;
 
         lock (gate)
         {

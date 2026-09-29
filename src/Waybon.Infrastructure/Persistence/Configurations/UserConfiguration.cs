@@ -6,13 +6,24 @@ namespace Waybon.Infrastructure.Persistence.Configurations;
 
 public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string TableName = "user";
+
+
+    // ===================================
+    // Configure
+    // ===================================
+
     public void Configure(EntityTypeBuilder<User> builder)
     {
         // ===================================
         // Table
         // ===================================
 
-        builder.ToTable("user");
+        builder.ToTable(TableName);
 
 
         // ===================================

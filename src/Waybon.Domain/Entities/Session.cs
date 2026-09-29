@@ -10,6 +10,9 @@ public sealed class Session
 
     public const int TokenHashLength = 64;
 
+    private const string UserIdRequiredMessage = "User ID is required.";
+    private static readonly string InvalidTokenHashMessage = $"Token hash must be exactly {TokenHashLength} characters long.";
+
 
     // ===================================
     // Constructors
@@ -48,27 +51,13 @@ public sealed class Session
 
     private static Guid ValidateUserId(Guid userId)
     {
-        if (userId == Guid.Empty)
-        {
-            throw new DomainValidationException
-            (
-                "User ID is required."
-            );
-        }
-
+        if (userId == Guid.Empty) throw new DomainValidationException(UserIdRequiredMessage);
         return userId;
     }
 
     private static string ValidateTokenHash(string tokenHash)
     {
-        if (string.IsNullOrWhiteSpace(tokenHash) || tokenHash.Length != TokenHashLength)
-        {
-            throw new DomainValidationException
-            (
-                $"Token hash must be exactly {TokenHashLength} characters long."
-            );
-        }
-
+        if (string.IsNullOrWhiteSpace(tokenHash) || tokenHash.Length != TokenHashLength) throw new DomainValidationException(InvalidTokenHashMessage);
         return tokenHash;
     }
 }

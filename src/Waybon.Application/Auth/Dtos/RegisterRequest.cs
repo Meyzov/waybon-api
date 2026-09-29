@@ -16,7 +16,7 @@ public sealed class RegisterRequest
     public string Email { get; set; } = string.Empty;
 
     [Required]
-    [MinLength(8)]
-    [MaxLength(128)]
+    [MinLength(UserCredential.PasswordMinLength)]
+    [MaxLength(UserCredential.PasswordMaxLength)]
     public string Password { get; set; } = string.Empty;
 }

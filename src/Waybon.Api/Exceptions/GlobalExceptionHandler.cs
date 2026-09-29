@@ -10,6 +10,15 @@ namespace Waybon.Api.Exceptions;
 public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    private const string UnexpectedErrorMessage = "An unexpected error occurred.";
+    private const string UnhandledExceptionLogMessage = "Unhandled exception on {Method} {Path}. TraceId: {TraceId}";
+    private const string CodeKey = "code";
+
+
+    // ===================================
     // TryHandleAsync
     // ===================================
 
@@ -32,7 +41,7 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
             TooManyRequestsException ex => (StatusCodes.Status429TooManyRequests, ex.Message),
             EmailDeliveryException ex => (StatusCodes.Status503ServiceUnavailable, ex.Message),
 
-            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
+            _ => (StatusCodes.Status500InternalServerError, UnexpectedErrorMessage)
         };
 
         if (statusCode == StatusCodes.Status500InternalServerError)
@@ -40,7 +49,7 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
             logger.LogError
             (
                 exception,
-                "Unhandled exception on {Method} {Path}. TraceId: {TraceId}",
+                UnhandledExceptionLogMessage,
                 httpContext.Request.Method,
                 httpContext.Request.Path,
                 Activity.Current?.Id ?? httpContext.TraceIdentifier
@@ -56,12 +65,8 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
 
         if (exception is ForbiddenException forbiddenException)
         {
-            problemDetails.Extensions["code"] = forbiddenException.Code;
-
-            foreach (var (key, value) in forbiddenException.Extensions)
-            {
-                problemDetails.Extensions[key] = value;
-            }
+            problemDetails.Extensions[CodeKey] = forbiddenException.Code;
+            foreach (var (key, value) in forbiddenException.Extensions) problemDetails.Extensions[key] = value;
         }
 
         if (exception is TooManyRequestsException tooManyRequestsException)

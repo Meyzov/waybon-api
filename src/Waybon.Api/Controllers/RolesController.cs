@@ -11,6 +11,13 @@ namespace Waybon.Api.Controllers;
 public sealed class RolesController(IRoleService roleService) : ControllerBase
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    private const string RoleNotFoundMessage = "Role not found.";
+
+
+    // ===================================
     // GET: api/v1/roles
     // ===================================
 
@@ -30,11 +37,7 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
     public async Task<ActionResult<RoleResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var role = await roleService.GetByIdAsync(id, cancellationToken);
-        if (role is null) return Problem
-        (
-            statusCode: StatusCodes.Status404NotFound,
-            detail: "Role not found."
-        );
+        if (role is null) return Problem(statusCode: StatusCodes.Status404NotFound, detail: RoleNotFoundMessage);
 
         return Ok(role);
     }
@@ -68,11 +71,7 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
     public async Task<ActionResult<RoleResponse>> Update(Guid id, UpdateRoleRequest request, CancellationToken cancellationToken)
     {
         var role = await roleService.UpdateAsync(id, request, cancellationToken);
-        if (role is null) return Problem
-        (
-            statusCode: StatusCodes.Status404NotFound,
-            detail: "Role not found."
-        );
+        if (role is null) return Problem(statusCode: StatusCodes.Status404NotFound, detail: RoleNotFoundMessage);
 
         return Ok(role);
     }
@@ -86,11 +85,7 @@ public sealed class RolesController(IRoleService roleService) : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await roleService.DeleteAsync(id, cancellationToken);
-        if (!deleted) return Problem
-        (
-            statusCode: StatusCodes.Status404NotFound,
-            detail: "Role not found."
-        );
+        if (!deleted) return Problem(statusCode: StatusCodes.Status404NotFound, detail: RoleNotFoundMessage);
 
         return NoContent();
     }

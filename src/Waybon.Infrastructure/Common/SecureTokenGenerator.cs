@@ -31,11 +31,7 @@ public sealed class SecureTokenGenerator : ITokenGenerator
     // Hash
     // ===================================
 
-    public string Hash(string token)
-    {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
-        return Convert.ToHexStringLower(hash);
-    }
+    public string Hash(string token) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
 
     // ===================================

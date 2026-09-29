@@ -11,6 +11,6 @@ public sealed class LoginRequest
     public string Email { get; set; } = string.Empty;
 
     [Required]
-    [MaxLength(128)]
+    [MaxLength(UserCredential.PasswordMaxLength)]
     public string Password { get; set; } = string.Empty;
 }

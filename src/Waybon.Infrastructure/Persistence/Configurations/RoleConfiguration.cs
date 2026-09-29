@@ -6,13 +6,25 @@ namespace Waybon.Infrastructure.Persistence.Configurations;
 
 public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
 {
+    // ===================================
+    // Constants
+    // ===================================
+
+    private const string TableName = "role";
+    private const string DefaultRoleFilter = "is_default = true";
+
+
+    // ===================================
+    // Configure
+    // ===================================
+
     public void Configure(EntityTypeBuilder<Role> builder)
     {
         // ===================================
         // Table
         // ===================================
 
-        builder.ToTable("role");
+        builder.ToTable(TableName);
 
 
         // ===================================
@@ -38,7 +50,7 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
             role => role.Name
         )
         .IsUnique();
-        
+
 
         // ===================================
         // IsDefault
@@ -49,6 +61,6 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
             role => role.IsDefault
         )
         .IsUnique()
-        .HasFilter("is_default = true");
+        .HasFilter(DefaultRoleFilter);
     }
 }

@@ -9,6 +9,13 @@ namespace Waybon.Infrastructure.Emails;
 public sealed class EmailQueueProcessor(EmailQueue queue, IServiceScopeFactory scopeFactory, ILogger<EmailQueueProcessor> logger) : BackgroundService
 {
     // ===================================
+    // Constants
+    // ===================================
+
+    private const string UnexpectedErrorLogMessage = "Unexpected error while sending a queued email.";
+
+
+    // ===================================
     // ExecuteAsync
     // ===================================
 
@@ -25,7 +32,7 @@ public sealed class EmailQueueProcessor(EmailQueue queue, IServiceScopeFactory s
             }
             catch (EmailDeliveryException)
             {
-                // Skip, Already logged by the email sender.
+                // Already logged by the email sender.
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -33,7 +40,7 @@ public sealed class EmailQueueProcessor(EmailQueue queue, IServiceScopeFactory s
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unexpected error while sending a queued email.");
+                logger.LogError(ex, UnexpectedErrorLogMessage);
             }
         }
     }
